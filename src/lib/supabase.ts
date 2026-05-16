@@ -10,11 +10,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// On web, let the Supabase client auto-parse the hash fragment after a
+// password-recovery redirect so the resulting recovery session is available
+// to the reset-password screen via supabase.auth.updateUser({ password }).
+// On native there's no URL to parse, so we keep the flag off.
+const isWeb = typeof window !== "undefined" && typeof window.location !== "undefined";
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: isWeb,
   },
 });

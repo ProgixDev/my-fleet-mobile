@@ -27,7 +27,8 @@ import {
   AlertCircle,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { vehicles, agencies } from "@/data/mockData";
+import { useAgencyStore } from "@/stores/useAgencyStore";
+import { useVehicle, useAgency } from "@/hooks/useAgencies";
 import { computeDeliveryFee, type DeliveryComputeResult } from "@/utils/delivery";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -83,10 +84,15 @@ export default function BookingScreen() {
   const [tempStart, setTempStart] = useState<Date>(startDate);
   const [tempEnd, setTempEnd] = useState<Date>(endDate);
 
-  const vehicle = vehicles.find((v) => v.id === id);
-  const agency = agencies.find((a) => a.id === vehicle?.agencyId);
-  const deliveryConfig = agency?.deliveryConfig;
-  const deliveryEnabled = deliveryConfig?.enabled === true;
+  const pairedAgencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const { data: vehicle } = useVehicle(id, pairedAgencyId ?? undefined);
+  const { data: agency } = useAgency(pairedAgencyId ?? undefined);
+  // Delivery config isn't shipped by the public agency endpoint yet — fall back
+  // to disabled (no free-delivery option) until the backend exposes it.
+  const deliveryConfig = undefined as
+    | { enabled: boolean; basePointLat: number; basePointLng: number; ratePerKm: number; minFee?: number; maxDistanceKm?: number }
+    | undefined;
+  const deliveryEnabled = false;
 
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryResult, setDeliveryResult] = useState<DeliveryComputeResult | null>(null);

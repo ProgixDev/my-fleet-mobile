@@ -27,7 +27,12 @@
         "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.digitariawebs.myfleet.client"
+      "package": "com.digitariawebs.myfleet.client",
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/logo.png",
@@ -47,8 +52,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "69b9b069-4353-494b-ac8f-3a08626aadd1"
+        "projectId": "cfa4e46d-bc54-4728-82af-7a949aaf42c9"
       }
-    }
+    },
+    "owner": "iheb1"
   }
 }

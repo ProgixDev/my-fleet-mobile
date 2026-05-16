@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   Dimensions,
+  Share,
 } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,9 +25,9 @@ import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "@/components/BottomNav";
 import { useTheme } from "@/context/ThemeContext";
-import { reviews } from "@/data/mockData";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import { useAgencyFleet } from "@/hooks/useAgencyFleet";
+import { useAgencyReviews, useAgencyRating } from "@/hooks/useReviews";
 import { centsToUnits } from "@/utils/money";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -45,23 +46,28 @@ export default function HomeScreen() {
   const fleetQuery = useAgencyFleet(pairedId);
   const agencyVehicles = fleetQuery.data ?? [];
 
-  const agencyReviews = useMemo(
-    () => (pairedId ? reviews.filter((r) => r.agencyId === pairedId) : []),
-    [pairedId],
-  );
+  const { data: agencyReviews = [] } = useAgencyReviews(pairedId ?? undefined);
+  const { data: ratingData } = useAgencyRating(pairedId ?? undefined);
+
   const heroCoverUri = useMemo(() => {
     const first = agencyVehicles.find((v) => v.thumbnailUrl);
     return first?.thumbnailUrl ?? null;
   }, [agencyVehicles]);
 
   const reviewStats = useMemo(() => {
+    if (ratingData) {
+      return {
+        rating: ratingData.average != null ? Number(ratingData.average.toFixed(1)) : 0,
+        count: ratingData.count,
+      };
+    }
     if (agencyReviews.length === 0) return { rating: 0, count: 0 };
     const sum = agencyReviews.reduce((acc, r) => acc + r.rating, 0);
     return {
       rating: Number((sum / agencyReviews.length).toFixed(1)),
       count: agencyReviews.length,
     };
-  }, [agencyReviews]);
+  }, [agencyReviews, ratingData]);
 
   if (!pairedId || !paired) {
     return <Redirect href="/scan" />;
@@ -107,7 +113,15 @@ export default function HomeScreen() {
             >
               <ScanLine size={20} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.heroButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.heroButton}
+              activeOpacity={0.7}
+              onPress={() => {
+                Share.share({
+                  message: "Check out MyFleet — premium car rental on the go.",
+                }).catch(() => {});
+              }}
+            >
               <Share2 size={20} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
           </SafeAreaView>
@@ -420,7 +434,7 @@ export default function HomeScreen() {
                           ]}
                         >
                           <Text style={styles.reviewAvatarText}>
-                            {review.userName[0]}
+                            {(review.userName ?? "?")[0]}
                           </Text>
                         </View>
                         <Text
@@ -429,19 +443,21 @@ export default function HomeScreen() {
                             { color: colors.text },
                           ]}
                         >
-                          {review.userName}
+                          {review.userName ?? "Client"}
                         </Text>
                       </View>
                       <View style={styles.reviewStars}>
-                        {[...Array(review.rating)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={12}
-                            fill="#F1C40F"
-                            color="#F1C40F"
-                            strokeWidth={1.5}
-                          />
-                        ))}
+                        {[...Array(Math.max(0, Math.floor(review.rating)))].map(
+                          (_, i) => (
+                            <Star
+                              key={i}
+                              size={12}
+                              fill="#F1C40F"
+                              color="#F1C40F"
+                              strokeWidth={1.5}
+                            />
+                          ),
+                        )}
                       </View>
                     </View>
 
@@ -456,35 +472,8 @@ export default function HomeScreen() {
                     <Text
                       style={[styles.reviewDate, { color: colors.textMuted }]}
                     >
-                      {review.date}
+                      {new Date(review.createdAt).toLocaleDateString()}
                     </Text>
-
-                    {review.agencyResponse && (
-                      <View
-                        style={[
-                          styles.responseBox,
-                          {
-                            backgroundColor: isDark
-                              ? "rgba(74, 25, 66, 0.25)"
-                              : "rgba(74, 25, 66, 0.08)",
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[styles.responseLabel, { color: colors.text }]}
-                        >
-                          {t("agency.agencyResponse")}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.responseText,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {review.agencyResponse}
-                        </Text>
-                      </View>
-                    )}
                   </View>
                 ))}
               </View>

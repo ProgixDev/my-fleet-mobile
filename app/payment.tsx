@@ -1,24 +1,88 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
+  Linking,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ArrowLeft, Lock, Shield } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
+import { useAgencyStore } from "@/stores/useAgencyStore";
+import { createCheckoutSession } from "@/services/bookingService";
 
 export default function PaymentScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const params = useLocalSearchParams<{ amount?: string; bookingId?: string }>();
+  const amountStr =
+    typeof params.amount === "string" && params.amount.length > 0
+      ? params.amount
+      : "0";
+  const bookingIdParam =
+    typeof params.bookingId === "string" && params.bookingId.length > 0
+      ? params.bookingId
+      : null;
+  const agencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handlePay = async () => {
+    if (!bookingIdParam) {
+      Alert.alert(
+        t("payment.errorTitle", { defaultValue: "Erreur" }),
+        t("payment.missingBooking", {
+          defaultValue: "Réservation introuvable. Reprenez depuis vos réservations.",
+        }),
+      );
+      return;
+    }
+    if (!agencyId) {
+      Alert.alert(
+        t("payment.errorTitle", { defaultValue: "Erreur" }),
+        t("payment.missingAgency", {
+          defaultValue: "Aucune agence associée à votre compte.",
+        }),
+      );
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const session = await createCheckoutSession(agencyId, bookingIdParam);
+      if (!session.url) {
+        throw new Error("Missing checkout URL");
+      }
+      // Open Stripe Checkout in the device's external browser. After payment,
+      // Stripe redirects to PUBLIC_PAYMENT_RETURN_URL on the server, which then
+      // deep-links back to myfleet://payment-return?status=success&session_id=...
+      const supported = await Linking.canOpenURL(session.url);
+      if (!supported) {
+        throw new Error("Cannot open payment URL");
+      }
+      await Linking.openURL(session.url);
+    } catch (e) {
+      Alert.alert(
+        t("payment.errorTitle", { defaultValue: "Erreur de paiement" }),
+        e instanceof Error
+          ? e.message
+          : t("payment.errorGeneric", {
+              defaultValue:
+                "Impossible de démarrer le paiement. Réessayez plus tard.",
+            }),
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -67,7 +131,11 @@ export default function PaymentScreen() {
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.addCard} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.addCard}
+            activeOpacity={0.7}
+            onPress={() => router.push("/payment-methods" as any)}
+          >
             <Text style={styles.addCardText}>{t("payment.addCard")}</Text>
           </TouchableOpacity>
         </View>
@@ -84,13 +152,18 @@ export default function PaymentScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/confirmation/1" as any)}
-          style={styles.primaryCta}
+          onPress={handlePay}
+          disabled={isProcessing}
+          style={[styles.primaryCta, isProcessing && { opacity: 0.7 }]}
           activeOpacity={0.9}
         >
-          <Text style={styles.primaryCtaText}>
-            {t("payment.confirmPay", { amount: "1 370" })}
-          </Text>
+          {isProcessing ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.primaryCtaText}>
+              {t("payment.confirmPay", { amount: amountStr })}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </View>

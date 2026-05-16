@@ -7,6 +7,8 @@ import {
   Image,
   StyleSheet,
   Dimensions,
+  Share,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,12 +22,17 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import {
-  agencies,
-  vehicles,
-  reviews,
-  vehicleImages,
-  getVehicleCover,
-} from "@/data/mockData";
+  useAgency,
+  useAgencyVehicles,
+} from "@/hooks/useAgencies";
+import {
+  useAgencyReviews,
+  useAgencyRating,
+} from "@/hooks/useReviews";
+import { centsToUnits } from "@/utils/money";
+
+const FALLBACK_HERO =
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1200";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -37,11 +44,26 @@ export default function AgencyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>("vehicles");
 
-  const agency = agencies.find((a) => a.id === id);
-  const agencyVehicles = vehicles.filter((v) => v.agencyId === id);
-  const agencyReviews = reviews.filter((r) => r.agencyId === id);
+  const { data: agency, isLoading: agencyLoading } = useAgency(id);
+  const { data: agencyVehicles = [] } = useAgencyVehicles(id);
+  const { data: agencyReviews = [] } = useAgencyReviews(id);
+  const { data: ratingData } = useAgencyRating(id);
 
+  if (agencyLoading) {
+    return (
+      <View style={[styles.container, { alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator color="#EAEAEA" />
+      </View>
+    );
+  }
   if (!agency) return null;
+
+  const heroLogoText = (agency.logo?.[0] ?? agency.name?.[0] ?? "?").toUpperCase();
+  const ratingDisplay =
+    ratingData?.average != null ? ratingData.average.toFixed(1) : "—";
+  const reviewsCount = ratingData?.count ?? agencyReviews.length;
+  const heroImage =
+    agency.logo && agency.logo.startsWith("http") ? agency.logo : FALLBACK_HERO;
 
   return (
     <View style={styles.container}>
@@ -49,7 +71,7 @@ export default function AgencyDetailScreen() {
         {/* ─── Hero ─── */}
         <View style={styles.hero}>
           <Image
-            source={{ uri: vehicleImages[Number(id) - 1] }}
+            source={{ uri: heroImage }}
             style={styles.heroImage}
           />
           <LinearGradient
@@ -67,14 +89,22 @@ export default function AgencyDetailScreen() {
             >
               <ArrowLeft size={20} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.heroButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.heroButton}
+              activeOpacity={0.7}
+              onPress={() => {
+                Share.share({
+                  message: "Discover this agency on MyFleet.",
+                }).catch(() => {});
+              }}
+            >
               <Share2 size={20} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
           </SafeAreaView>
 
           {/* Overlapping Logo */}
           <View style={styles.heroLogo}>
-            <Text style={styles.heroLogoText}>{agency.logo}</Text>
+            <Text style={styles.heroLogoText}>{heroLogoText}</Text>
           </View>
         </View>
 
@@ -94,8 +124,10 @@ export default function AgencyDetailScreen() {
           <View style={styles.metaRow}>
             <View style={styles.ratingRow}>
               <Star size={16} fill="#F1C40F" color="#F1C40F" strokeWidth={1.5} />
-              <Text style={styles.ratingValue}>{agency.rating}</Text>
-              <Text style={styles.ratingCount}>{t("agency.reviewsCount", { count: agency.reviews })}</Text>
+              <Text style={styles.ratingValue}>{ratingDisplay}</Text>
+              <Text style={styles.ratingCount}>
+                {t("agency.reviewsCount", { count: reviewsCount })}
+              </Text>
             </View>
             <View style={styles.verifiedBadge}>
               <CheckCircle size={12} color="#2ECC71" strokeWidth={1.5} />
@@ -103,7 +135,9 @@ export default function AgencyDetailScreen() {
             </View>
           </View>
 
-          <Text style={styles.description}>{agency.description}</Text>
+          {agency.address ? (
+            <Text style={styles.description}>{agency.address}</Text>
+          ) : null}
 
           {/* ─── Tabs ─── */}
           <View style={styles.tabContainer}>
@@ -166,7 +200,10 @@ export default function AgencyDetailScreen() {
                     }
                   >
                     <Image
-                      source={getVehicleCover(vehicle) as any}
+                      source={{
+                        uri:
+                          vehicle.thumbnailUrl ?? FALLBACK_HERO,
+                      }}
                       style={styles.vehicleMiniImage}
                     />
                     <View style={styles.vehicleMiniInfo}>
@@ -175,9 +212,14 @@ export default function AgencyDetailScreen() {
                       </Text>
                       <View style={styles.vehicleMiniPriceRow}>
                         <Text style={styles.vehicleMiniPrice}>
-                          {t("common.priceEuro", { price: vehicle.price })}
+                          {t("common.priceEuro", {
+                            price: centsToUnits(vehicle.dailyRate),
+                          })}
                         </Text>
-                        <Text style={styles.vehicleMiniUnit}> {t("common.perDay")}</Text>
+                        <Text style={styles.vehicleMiniUnit}>
+                          {" "}
+                          {t("common.perDay")}
+                        </Text>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -192,7 +234,7 @@ export default function AgencyDetailScreen() {
               {/* Rating Summary */}
               <View style={styles.ratingSummary}>
                 <View style={styles.ratingSummaryTop}>
-                  <Text style={styles.ratingSummaryBig}>{agency.rating}</Text>
+                  <Text style={styles.ratingSummaryBig}>{ratingDisplay}</Text>
                   <Text style={styles.ratingSummaryMax}>/5</Text>
                 </View>
                 <View style={styles.starsRow}>
@@ -207,7 +249,7 @@ export default function AgencyDetailScreen() {
                   ))}
                 </View>
                 <Text style={styles.ratingSummaryCount}>
-                  {t("agency.reviewsBasedOn", { count: agency.reviews })}
+                  {t("agency.reviewsBasedOn", { count: reviewsCount })}
                 </Text>
               </View>
 
@@ -215,45 +257,36 @@ export default function AgencyDetailScreen() {
               <View style={styles.reviewsList}>
                 {agencyReviews.map((review) => (
                   <View key={review.id} style={styles.reviewCard}>
-                    {/* Header */}
                     <View style={styles.reviewHeader}>
                       <View style={styles.reviewUser}>
                         <View style={styles.reviewAvatar}>
                           <Text style={styles.reviewAvatarText}>
-                            {review.userName[0]}
+                            {(review.userName ?? "?")[0]}
                           </Text>
                         </View>
                         <Text style={styles.reviewUserName}>
-                          {review.userName}
+                          {review.userName ?? "Client"}
                         </Text>
                       </View>
                       <View style={styles.reviewStars}>
-                        {[...Array(review.rating)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={12}
-                            fill="#F1C40F"
-                            color="#F1C40F"
-                            strokeWidth={1.5}
-                          />
-                        ))}
+                        {[...Array(Math.max(0, Math.floor(review.rating)))].map(
+                          (_, i) => (
+                            <Star
+                              key={i}
+                              size={12}
+                              fill="#F1C40F"
+                              color="#F1C40F"
+                              strokeWidth={1.5}
+                            />
+                          ),
+                        )}
                       </View>
                     </View>
 
                     <Text style={styles.reviewComment}>{review.comment}</Text>
-                    <Text style={styles.reviewDate}>{review.date}</Text>
-
-                    {/* Agency Response */}
-                    {review.agencyResponse && (
-                      <View style={styles.responseBox}>
-                        <Text style={styles.responseLabel}>
-                          {t("agency.agencyResponse")}
-                        </Text>
-                        <Text style={styles.responseText}>
-                          {review.agencyResponse}
-                        </Text>
-                      </View>
-                    )}
+                    <Text style={styles.reviewDate}>
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </Text>
                   </View>
                 ))}
               </View>

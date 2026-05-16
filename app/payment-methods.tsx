@@ -1,44 +1,59 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import { CreditCard, Plus, Trash2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
+import {
+  usePaymentMethods,
+  useDeletePaymentMethod,
+} from "@/hooks/usePaymentMethods";
 
-interface Card {
-  id: string;
-  brand: string;
-  last4: string;
-  expiryMonth: string;
-  expiryYear: string;
-  primary: boolean;
-  gradient: [string, string];
-}
-
-const cards: Card[] = [
-  {
-    id: "1",
-    brand: "Visa",
-    last4: "4242",
-    expiryMonth: "09",
-    expiryYear: "27",
-    primary: true,
-    gradient: ["#4A1942", "#8B3D7E"],
-  },
-  {
-    id: "2",
-    brand: "Mastercard",
-    last4: "8123",
-    expiryMonth: "05",
-    expiryYear: "26",
-    primary: false,
-    gradient: ["#2E1C2B", "#4A1942"],
-  },
+const GRADIENTS: [string, string][] = [
+  ["#4A1942", "#8B3D7E"],
+  ["#2E1C2B", "#4A1942"],
+  ["#1B1B36", "#3D2B6E"],
 ];
+
+function pad2(n: number) {
+  return n.toString().padStart(2, "0");
+}
 
 export default function PaymentMethodsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { data: cards = [], isLoading, isError, refetch } = usePaymentMethods();
+  const deleteCard = useDeletePaymentMethod();
+
+  const handleDelete = (id: string, last4: string) => {
+    Alert.alert(
+      t("paymentMethods.removeTitle", { defaultValue: "Supprimer la carte" }),
+      t("paymentMethods.removeConfirm", {
+        defaultValue: `Supprimer la carte se terminant par ${last4} ?`,
+      }),
+      [
+        { text: t("common.cancel", { defaultValue: "Annuler" }), style: "cancel" },
+        {
+          text: t("common.delete", { defaultValue: "Supprimer" }),
+          style: "destructive",
+          onPress: () => deleteCard.mutate(id),
+        },
+      ],
+    );
+  };
+
+  const handleAddCard = () => {
+    // Stripe Payment Sheet doit être utilisé pour ajouter une carte —
+    // l'intégration native @stripe/stripe-react-native sera branchée
+    // ultérieurement. Pour l'instant un placeholder lisible.
+    Alert.alert(
+      t("paymentMethods.addCard"),
+      t("paymentMethods.addCardComingSoon", {
+        defaultValue:
+          "L'ajout d'une carte sera disponible lorsque Stripe Payment Sheet sera activé.",
+      }),
+    );
+  };
 
   return (
     <ScreenContainer
@@ -46,53 +61,94 @@ export default function PaymentMethodsScreen() {
       subtitle={t("paymentMethods.subtitle")}
     >
       <View style={{ gap: 14, marginTop: 6 }}>
-        {cards.map((card) => (
-          <View key={card.id}>
-            <LinearGradient
-              colors={card.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.card}
-            >
-              <View style={styles.cardTop}>
-                <CreditCard size={22} color="#FFFFFF" strokeWidth={1.6} />
-                {card.primary && (
-                  <View style={styles.primaryBadge}>
-                    <Text style={styles.primaryBadgeText}>
-                      {t("paymentMethods.primary").toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.cardNumber}>•••• •••• •••• {card.last4}</Text>
-
-              <View style={styles.cardBottom}>
-                <Text style={styles.cardBrand}>{card.brand}</Text>
-                <Text style={styles.cardExpiry}>
-                  {t("paymentMethods.expiry", {
-                    month: card.expiryMonth,
-                    year: card.expiryYear,
-                  })}
-                </Text>
-              </View>
-            </LinearGradient>
-
-            <Pressable
-              style={[
-                styles.removeRow,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <Trash2 size={16} color={colors.error} strokeWidth={1.8} />
-              <Text style={[styles.removeText, { color: colors.error }]}>
-                {t("paymentMethods.remove")}
+        {isLoading ? (
+          <View style={{ paddingVertical: 40, alignItems: "center" }}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : isError ? (
+          <View style={{ paddingVertical: 30, alignItems: "center", gap: 12 }}>
+            <Text style={{ color: colors.textSecondary }}>
+              {t("paymentMethods.loadError", {
+                defaultValue: "Impossible de charger vos cartes.",
+              })}
+            </Text>
+            <Pressable onPress={() => refetch()}>
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                {t("common.retry", { defaultValue: "Réessayer" })}
               </Text>
             </Pressable>
           </View>
-        ))}
+        ) : cards.length === 0 ? (
+          <View style={{ paddingVertical: 30, alignItems: "center", gap: 8 }}>
+            <CreditCard
+              size={32}
+              color={colors.textSecondary}
+              strokeWidth={1.5}
+            />
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+              {t("paymentMethods.empty", {
+                defaultValue: "Aucune carte enregistrée.",
+              })}
+            </Text>
+          </View>
+        ) : (
+          cards.map((card, idx) => (
+            <View key={card.id}>
+              <LinearGradient
+                colors={GRADIENTS[idx % GRADIENTS.length]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.card}
+              >
+                <View style={styles.cardTop}>
+                  <CreditCard size={22} color="#FFFFFF" strokeWidth={1.6} />
+                  {card.isDefault && (
+                    <View style={styles.primaryBadge}>
+                      <Text style={styles.primaryBadgeText}>
+                        {t("paymentMethods.primary").toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <Text style={styles.cardNumber}>
+                  •••• •••• •••• {card.last4}
+                </Text>
+
+                <View style={styles.cardBottom}>
+                  <Text style={styles.cardBrand}>{card.brand}</Text>
+                  <Text style={styles.cardExpiry}>
+                    {t("paymentMethods.expiry", {
+                      month: pad2(card.expMonth),
+                      year: String(card.expYear).slice(-2),
+                    })}
+                  </Text>
+                </View>
+              </LinearGradient>
+
+              <Pressable
+                onPress={() => handleDelete(card.id, card.last4)}
+                disabled={deleteCard.isPending}
+                style={[
+                  styles.removeRow,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    opacity: deleteCard.isPending ? 0.5 : 1,
+                  },
+                ]}
+              >
+                <Trash2 size={16} color={colors.error} strokeWidth={1.8} />
+                <Text style={[styles.removeText, { color: colors.error }]}>
+                  {t("paymentMethods.remove")}
+                </Text>
+              </Pressable>
+            </View>
+          ))
+        )}
 
         <Pressable
+          onPress={handleAddCard}
           style={[
             styles.addButton,
             { backgroundColor: colors.surface, borderColor: colors.primary },

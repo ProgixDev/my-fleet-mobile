@@ -41,7 +41,7 @@ import Animated, {
   useDerivedValue,
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { bookings, agencies, vehicles } from "@/data/mockData";
+import { useBookingDetail } from "@/hooks/useBookings";
 import { useTheme } from "@/context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -393,21 +393,30 @@ function formatContractDate(date: string): string {
   }).format(new Date(date));
 }
 
+interface ContractBooking {
+  id: string;
+  vehicleName: string;
+  reference: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  total: number;
+  includedKm?: number;
+  extraKmRate?: number;
+}
+
 function buildContractHtml({
   booking,
-  vehicle,
   agencyName,
 }: {
-  booking: (typeof bookings)[number];
-  vehicle?: (typeof vehicles)[number];
+  booking: ContractBooking;
   agencyName: string;
 }) {
-  const vehicleName = booking.vehicleName || vehicle?.name || "Véhicule";
-  const deposit = vehicle?.conditions.deposit
-    ? `${vehicle.conditions.deposit.toLocaleString("fr-FR")} €`
-    : "Selon conditions agence";
-  const includedKm = vehicle?.conditions.kmPerDay
-    ? `${vehicle.conditions.kmPerDay} km / jour`
+  const vehicleName = booking.vehicleName || "Véhicule";
+  const deposit = "Selon conditions agence";
+  const includedKm = booking.includedKm
+    ? `${booking.includedKm} km`
     : "Selon conditions agence";
 
   return `
@@ -555,13 +564,9 @@ export default function TrackingScreen() {
   const { colors, isDark } = useTheme();
   const [isGeneratingContract, setIsGeneratingContract] = useState(false);
 
-  const booking = bookings.find((b) => b.id === id);
-  const vehicle = vehicles.find((v) => v.id === booking?.vehicleId);
-  const agency = agencies.find(
-    (a) => booking && a.name === booking.agencyName
-  );
-  const agencyLogo = agency?.logo ?? "P";
-  const agencyName = booking?.agencyName ?? t("tracking.fallbackAgency");
+  const { data: booking } = useBookingDetail(id);
+  const agencyLogo = "P";
+  const agencyName = booking?.agencyName || t("tracking.fallbackAgency");
 
   const handleGenerateContract = async () => {
     if (!booking) {
@@ -574,7 +579,7 @@ export default function TrackingScreen() {
 
     try {
       setIsGeneratingContract(true);
-      const html = buildContractHtml({ booking, vehicle, agencyName });
+      const html = buildContractHtml({ booking, agencyName });
       const { uri } = await Print.printToFileAsync({ html });
       const canShare = await Sharing.isAvailableAsync();
 
@@ -616,7 +621,16 @@ export default function TrackingScreen() {
           </TouchableOpacity>
         </SafeAreaView>
 
-        <TouchableOpacity style={styles.fullscreenBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.fullscreenBtn}
+          activeOpacity={0.7}
+          onPress={() =>
+            Alert.alert(
+              t("tracking.fullscreen"),
+              "Fullscreen map view is coming soon.",
+            )
+          }
+        >
           <Navigation size={16} color="#EAEAEA" strokeWidth={1.5} />
           <Text style={styles.fullscreenText}>{t("tracking.fullscreen")}</Text>
         </TouchableOpacity>

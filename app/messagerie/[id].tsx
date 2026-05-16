@@ -8,6 +8,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Linking,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,7 +17,8 @@ import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Send, Paperclip, Phone, Check, CheckCheck } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { bookings, agencies } from "@/data/mockData";
+import { useBookingDetail } from "@/hooks/useBookings";
+import { useMessages, usePostMessage } from "@/hooks/useMessages";
 import { useTheme } from "@/context/ThemeContext";
 
 interface Message {
@@ -34,34 +37,38 @@ export default function MessagerieScreen() {
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>(() => [
-    { id: 1, text: t("messagerie.seed.msg1"), from: "agency", time: "09:30" },
-    { id: 2, text: t("messagerie.seed.msg2"), from: "user", time: "09:32" },
-    { id: 3, text: t("messagerie.seed.msg3"), from: "agency", time: "09:45" },
-    { id: 4, text: t("messagerie.seed.msg4"), from: "user", time: "09:46" },
-  ]);
   const listRef = useRef<FlatList>(null);
 
-  const booking = bookings.find((b) => b.id === id);
-  const agency = agencies.find(
-    (a) => booking && a.name === booking.agencyName,
+  const { data: booking } = useBookingDetail(id);
+  const { data: serverMessages = [] } = useMessages(id);
+  const postMessage = usePostMessage(id);
+
+  const messages: Message[] = useMemo(
+    () =>
+      serverMessages.map((m, idx) => ({
+        id: idx + 1,
+        text: m.body,
+        from: m.senderRole === "client" ? "user" : "agency",
+        time: new Date(m.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      })),
+    [serverMessages],
   );
-  const agencyLogo = agency?.logo ?? "P";
-  const agencyName = booking?.agencyName ?? t("messagerie.fallbackAgency");
+
+  const agencyLogo = "P";
+  const agencyName = booking?.agencyName || t("messagerie.fallbackAgency");
 
   const handleSend = useCallback(() => {
-    if (!message.trim()) return;
-    const now = new Date();
-    const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-    setMessages((prev) => [
-      ...prev,
-      { id: prev.length + 1, text: message.trim(), from: "user", time },
-    ]);
+    const trimmed = message.trim();
+    if (!trimmed) return;
+    postMessage.mutate(trimmed);
     setMessage("");
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);
-  }, [message]);
+  }, [message, postMessage]);
 
   const renderMessage = useCallback(
     ({ item, index }: { item: Message; index: number }) => {
@@ -174,7 +181,29 @@ export default function MessagerieScreen() {
         </View>
 
         <Pressable
-          onPress={() => router.push(`/call/${id}` as any)}
+          onPress={async () => {
+            // Try to dial the agency directly via the OS phone dialer.
+            // Fall back to the in-app call screen if no number is available.
+            // For now booking doesn't expose the agency phone — keep the
+            // mock-UI behaviour but make sure it's intentional.
+            const phone = (booking as { agencyPhone?: string } | undefined)
+              ?.agencyPhone;
+            if (phone) {
+              const url = `tel:${phone.replace(/\s+/g, "")}`;
+              const supported = await Linking.canOpenURL(url);
+              if (supported) {
+                await Linking.openURL(url);
+                return;
+              }
+            }
+            Alert.alert(
+              t("messagerie.callTitle", { defaultValue: "Appeler l'agence" }),
+              t("messagerie.callNoPhone", {
+                defaultValue:
+                  "Aucun numéro de téléphone n'est disponible pour cette agence.",
+              }),
+            );
+          }}
           style={styles.callBtn}
           hitSlop={10}
         >

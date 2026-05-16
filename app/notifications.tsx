@@ -4,6 +4,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,12 +16,14 @@ import {
   Shield,
   Star,
   Receipt,
+  Bell,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { notifications, type NotificationType } from "@/data/mockData";
+import { useNotifications, useMarkRead, useMarkAllRead } from "@/hooks/useNotifications";
+import type { ServerNotification } from "@/services/notificationService";
 
-const iconMap: Record<NotificationType, LucideIcon> = {
+const iconMap: Record<string, LucideIcon> = {
   booking: Calendar,
   delivery: Truck,
   loyalty: Gift,
@@ -29,7 +32,7 @@ const iconMap: Record<NotificationType, LucideIcon> = {
   return_summary_ready: Receipt,
 };
 
-const colorMap: Record<NotificationType, string> = {
+const colorMap: Record<string, string> = {
   booking: "rgba(46, 204, 113, 0.15)",
   delivery: "rgba(74, 25, 66, 0.2)",
   loyalty: "rgba(241, 196, 15, 0.15)",
@@ -38,9 +41,31 @@ const colorMap: Record<NotificationType, string> = {
   return_summary_ready: "rgba(74, 25, 66, 0.25)",
 };
 
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}j`;
+}
+
+function notifRoute(n: ServerNotification): string | null {
+  const data = n.data ?? {};
+  if (typeof data.bookingId === "string") return `/booking/${data.bookingId}`;
+  if (typeof data.route === "string") return data.route;
+  return null;
+}
+
 export default function NotificationsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
+  const markRead = useMarkRead();
+  const markAllRead = useMarkAllRead();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -58,47 +83,83 @@ export default function NotificationsScreen() {
             <ArrowLeft size={24} color="#EAEAEA" strokeWidth={1.5} />
           </TouchableOpacity>
           <Text style={styles.title}>{t("notifications.title")}</Text>
+          {notifications.some((n) => !n.read) ? (
+            <TouchableOpacity
+              onPress={() => markAllRead.mutate()}
+              hitSlop={10}
+              style={{ marginLeft: "auto" }}
+            >
+              <Text style={{ color: "#EAEAEA", fontSize: 12 }}>
+                {t("notifications.markAllRead", { defaultValue: "Tout lire" })}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Notification List */}
-        <View style={styles.list}>
-          {notifications.map((notif) => {
-            const Icon = iconMap[notif.type];
-            const bgColor = colorMap[notif.type];
+        {isLoading ? (
+          <View style={{ paddingVertical: 40, alignItems: "center" }}>
+            <ActivityIndicator color="#EAEAEA" />
+          </View>
+        ) : isError ? (
+          <View style={{ paddingVertical: 40, alignItems: "center", gap: 12 }}>
+            <Text style={{ color: "rgba(234, 234, 234, 0.6)" }}>
+              {t("notifications.loadError", { defaultValue: "Impossible de charger les notifications." })}
+            </Text>
+            <TouchableOpacity onPress={() => refetch()}>
+              <Text style={{ color: "#EAEAEA", fontWeight: "600" }}>
+                {t("common.retry", { defaultValue: "Réessayer" })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={{ paddingVertical: 60, alignItems: "center", gap: 8 }}>
+            <Bell size={32} color="rgba(234, 234, 234, 0.3)" strokeWidth={1.5} />
+            <Text style={{ color: "rgba(234, 234, 234, 0.5)", fontSize: 14 }}>
+              {t("notifications.empty", { defaultValue: "Pas encore de notification." })}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {notifications.map((notif) => {
+              const Icon = iconMap[notif.type] ?? Bell;
+              const bgColor = colorMap[notif.type] ?? "rgba(234, 234, 234, 0.1)";
+              const route = notifRoute(notif);
 
-            return (
-              <TouchableOpacity
-                key={notif.id}
-                style={[
-                  styles.notifRow,
-                  {
-                    backgroundColor: notif.read ? "#050404" : "#2E1C2B",
-                  },
-                ]}
-                activeOpacity={0.85}
-                onPress={() => {
-                  if (notif.route) router.push(notif.route as never);
-                }}
-              >
-                {/* Icon */}
-                <View
-                  style={[styles.iconCircle, { backgroundColor: bgColor }]}
+              return (
+                <TouchableOpacity
+                  key={notif.id}
+                  style={[
+                    styles.notifRow,
+                    { backgroundColor: notif.read ? "#050404" : "#2E1C2B" },
+                  ]}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    if (!notif.read) markRead.mutate(notif.id);
+                    if (route) router.push(route as never);
+                  }}
                 >
-                  <Icon size={18} color="#EAEAEA" strokeWidth={1.5} />
-                </View>
+                  <View
+                    style={[styles.iconCircle, { backgroundColor: bgColor }]}
+                  >
+                    <Icon size={18} color="#EAEAEA" strokeWidth={1.5} />
+                  </View>
 
-                {/* Text */}
-                <View style={styles.notifTextWrapper}>
-                  <Text style={styles.notifTitle}>{notif.title}</Text>
-                  <Text style={styles.notifTime}>{t("notifications.agoPrefix", { time: notif.time })}</Text>
-                </View>
+                  <View style={styles.notifTextWrapper}>
+                    <Text style={styles.notifTitle}>{notif.title}</Text>
+                    <Text style={styles.notifTime}>
+                      {t("notifications.agoPrefix", {
+                        time: timeAgo(notif.createdAt),
+                      })}
+                    </Text>
+                  </View>
 
-                {/* Unread dot */}
-                {!notif.read && <View style={styles.unreadDot} />}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  {!notif.read && <View style={styles.unreadDot} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

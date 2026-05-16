@@ -124,6 +124,25 @@ export async function bookingSummary(
   });
 }
 
+export async function createCheckoutSession(
+  agencyId: string,
+  bookingId: string,
+): Promise<{ url: string; sessionId?: string }> {
+  const headers = await getAuthHeader();
+  return apiRequest<{ url: string; sessionId?: string }>(
+    `/client/bookings/${encodeURIComponent(bookingId)}/pay/checkout`,
+    {
+      method: "POST",
+      headers: {
+        ...headers,
+        ...agencyHeaders(agencyId),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+  );
+}
+
 // Adapter — normalises the server booking to the client app's existing
 // in-app `Booking` shape so screens that read `mockData.ts` types still work.
 export function adaptServerBooking(b: ServerBooking): {
