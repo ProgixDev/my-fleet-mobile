@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.digitariawebs.myfleet.client",
+      "bundleIdentifier": "com.progix.myfleet-client",
+      "buildNumber": "2",
       "icon": "./assets/logo.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -27,7 +28,8 @@
         "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.digitariawebs.myfleet.client",
+      "package": "com.progix.myfleet.client",
+      "versionCode": 2,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
