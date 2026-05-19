@@ -29,15 +29,15 @@ const ACCENT_SOFT = "#8B3D7E";
 const SLIDES = [
   {
     key: "screen1" as const,
-    image: require("../assets/Audi Q5/Audi Q5 - 1.jpg"),
+    image: require("../assets/audi-q5/audi-q5-1.jpg"),
   },
   {
     key: "screen2" as const,
-    image: require("../assets/BMW X3/BMW X3 - 2.jpg"),
+    image: require("../assets/bmw-x3/bmw-x3-2.jpg"),
   },
   {
     key: "screen3" as const,
-    image: require("../assets/Classe A/Classe A - 1.jpg"),
+    image: require("../assets/classe-a/classe-a-1.jpg"),
   },
 ];
 

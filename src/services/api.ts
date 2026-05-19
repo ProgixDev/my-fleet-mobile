@@ -102,7 +102,7 @@ export async function apiRequest<T>(
     });
   } catch (err) {
     clearTimeout(timeoutId);
-    if (err instanceof DOMException && err.name === "AbortError") {
+    if (err instanceof Error && err.name === "AbortError") {
       throw new ApiClientError({
         status: 0,
         code: "TIMEOUT",
