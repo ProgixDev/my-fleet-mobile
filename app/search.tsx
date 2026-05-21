@@ -481,10 +481,14 @@ export default function SearchScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t("search.suggestionsTitle")}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScroll}>
-                {vehicles.slice(0, 4).map((v, i) => (
+                {vehicles.slice(0, 4).map((v) => (
                   <TouchableOpacity key={v.id} style={styles.suggestionCard} activeOpacity={0.85} onPress={() => router.push(`/vehicle/${v.id}` as any)}>
-                    <Image source={{ uri: vehicleImages[i] }} style={styles.suggestionImage} />
-                    <View style={styles.suggestionInfo}><Text style={styles.suggestionName} numberOfLines={1}>{v.name}</Text><Text style={styles.suggestionPrice}>{t("common.pricePerDay", { price: v.price })}</Text></View>
+                    {v.thumbnailUrl ? (
+                      <Image source={{ uri: v.thumbnailUrl }} style={styles.suggestionImage} />
+                    ) : (
+                      <View style={styles.suggestionImage} />
+                    )}
+                    <View style={styles.suggestionInfo}><Text style={styles.suggestionName} numberOfLines={1}>{v.name}</Text><Text style={styles.suggestionPrice}>{t("common.pricePerDay", { price: v.dailyRate })}</Text></View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>

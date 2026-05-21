@@ -404,6 +404,8 @@ interface ContractBooking {
   total: number;
   includedKm?: number;
   extraKmRate?: number;
+  pickupMethod?: string;
+  deliveryAddress?: string;
 }
 
 function buildContractHtml({

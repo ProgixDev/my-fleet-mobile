@@ -29,7 +29,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import { useVehicle, useAgency } from "@/hooks/useAgencies";
-import { computeDeliveryFee, type DeliveryComputeResult } from "@/utils/delivery";
+import {
+  computeDeliveryFee,
+  type DeliveryComputeResult,
+  type DeliveryConfig,
+} from "@/utils/delivery";
 import { useTheme } from "@/context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -88,10 +92,10 @@ export default function BookingScreen() {
   const { data: vehicle } = useVehicle(id, pairedAgencyId ?? undefined);
   const { data: agency } = useAgency(pairedAgencyId ?? undefined);
   // Delivery config isn't shipped by the public agency endpoint yet — fall back
-  // to disabled (no free-delivery option) until the backend exposes it.
-  const deliveryConfig = undefined as
-    | { enabled: boolean; basePointLat: number; basePointLng: number; ratePerKm: number; minFee?: number; maxDistanceKm?: number }
-    | undefined;
+  // to disabled (no free-delivery option) until the backend exposes it. The
+  // `as` cast keeps the wider union (TS narrows a bare `const = undefined` to
+  // `undefined`, which then collapses the truthy branches below to `never`).
+  const deliveryConfig = undefined as DeliveryConfig | undefined;
   const deliveryEnabled = false;
 
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -130,8 +134,12 @@ export default function BookingScreen() {
   if (!vehicle || !agency) return null;
 
   const days = daysBetween(startDate, endDate);
-  const vehicleTotal = vehicle.price * days;
-  const chauffeurFee = withChauffeur ? vehicle.chauffeurPrice * days : 0;
+  // Public catalog returns only `dailyRate`. A dedicated chauffeur price isn't
+  // exposed yet — use 30% of the daily rate as a placeholder until the backend
+  // ships a real value.
+  const chauffeurDailyPrice = Math.round(vehicle.dailyRate * 0.3);
+  const vehicleTotal = vehicle.dailyRate * days;
+  const chauffeurFee = withChauffeur ? chauffeurDailyPrice * days : 0;
   const deliveryFee =
     pickupMethod === "delivery" && deliveryResult && deliveryResult.ok
       ? deliveryResult.fee
@@ -423,7 +431,7 @@ export default function BookingScreen() {
               {t("booking.chauffeur.title")}
             </Text>
             <Text style={styles.chauffeurPrice}>
-              {t("booking.chauffeur.price", { price: vehicle.chauffeurPrice })}
+              {t("booking.chauffeur.price", { price: chauffeurDailyPrice })}
             </Text>
           </View>
           <TouchableOpacity
@@ -453,7 +461,7 @@ export default function BookingScreen() {
             <View style={styles.summaryThumb} />
             <View>
               <Text style={styles.summaryVehicleName}>{vehicle.name}</Text>
-              <Text style={styles.summaryAgency}>{vehicle.agencyName}</Text>
+              <Text style={styles.summaryAgency}>{agency.name}</Text>
             </View>
           </View>
           <View style={styles.lineItems}>
