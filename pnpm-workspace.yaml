@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@supabase/supabase-js@2.106.1': patches/@supabase__supabase-js@2.106.1.patch
