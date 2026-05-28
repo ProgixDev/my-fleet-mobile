@@ -70,7 +70,11 @@ export default function HomeScreen() {
   }, [agencyReviews, ratingData]);
 
   if (!pairedId || !paired) {
-    return <Redirect href="/scan" />;
+    // The agency-specific home only makes sense once the user has paired
+    // with an agency. Unpaired users land on the public catalog where they
+    // can browse every agency and either pair via the scan tab or just
+    // book without pairing at all.
+    return <Redirect href="/search" />;
   }
 
   const avatarLetter = (paired.name ?? "?").charAt(0).toUpperCase();

@@ -38,10 +38,15 @@ export default function SplashScreen() {
 
   if (splashDone && isHydrated) {
     if (isAuthenticated) {
+      // Pairing with an agency via QR is OPTIONAL. If the user is already
+      // paired, drop them into their agency home. Otherwise send them to
+      // the public catalog (`/search`) where they can browse every agency
+      // without scanning anything. They can pair later from the search UI
+      // or from the scan tab whenever they want.
       if (pairedAgencyId) {
         return <Redirect href="/home" />;
       }
-      return <Redirect href="/scan" />;
+      return <Redirect href="/search" />;
     }
     return <Redirect href="/onboarding" />;
   }
