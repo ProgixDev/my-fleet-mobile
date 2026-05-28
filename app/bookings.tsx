@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +16,15 @@ import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "@/components/BottomNav";
 import { useTheme } from "@/context/ThemeContext";
-import { bookings, vehicleImages } from "@/data/mockData";
+import { useMyBookings } from "@/hooks/useBookings";
+import { centsToUnits } from "@/utils/money";
+
+const FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800",
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800",
+  "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800",
+  "https://images.unsplash.com/photo-1469285994282-454ceb49e63c?w=800",
+];
 
 type TabKey = "active" | "upcoming" | "history";
 
@@ -35,6 +44,15 @@ export default function BookingsScreen() {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("active");
+  const { data: rawBookings = [], isLoading, isError, refetch } = useMyBookings();
+
+  const bookings = useMemo(() => {
+    return rawBookings.filter((b) => {
+      if (activeTab === "active") return b.status === "active";
+      if (activeTab === "upcoming") return b.status === "confirmed";
+      return b.status === "completed";
+    });
+  }, [rawBookings, activeTab]);
 
   const statusConfig: Record<
     string,
@@ -106,132 +124,156 @@ export default function BookingsScreen() {
         </View>
 
         {/* Booking Cards */}
-        <View style={styles.cardsList}>
-          {bookings.map((booking, index) => {
-            const status =
-              statusConfig[booking.status] ?? statusConfig.completed;
+        {isLoading ? (
+          <View style={{ paddingVertical: 60, alignItems: "center" }}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : isError ? (
+          <View style={{ paddingVertical: 60, alignItems: "center", gap: 12 }}>
+            <Text style={{ color: colors.textSecondary }}>
+              {t("bookings.loadError", { defaultValue: "Impossible de charger vos réservations." })}
+            </Text>
+            <TouchableOpacity onPress={() => refetch()}>
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                {t("common.retry", { defaultValue: "Réessayer" })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : bookings.length === 0 ? (
+          <View style={{ paddingVertical: 60, alignItems: "center", gap: 8 }}>
+            <Calendar size={32} color={colors.textSecondary} strokeWidth={1.5} />
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+              {t("bookings.empty", {
+                defaultValue: "Aucune réservation dans cette catégorie.",
+              })}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.cardsList}>
+            {bookings.map((booking, index) => {
+              const status =
+                statusConfig[booking.status] ?? statusConfig.completed;
+              const cover = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
 
-            return (
-              <TouchableOpacity
-                key={booking.id}
-                activeOpacity={0.95}
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-                onPress={() =>
-                  router.push(
-                    booking.status === "completed"
-                      ? (`/booking-summary/${booking.id}` as any)
-                      : (`/tracking/${booking.id}` as any),
-                  )
-                }
-              >
-                <View style={styles.cardImageWrapper}>
-                  <Image
-                    source={{
-                      uri: vehicleImages[index % vehicleImages.length],
-                    }}
-                    style={styles.cardImage}
-                  />
-                  <LinearGradient
-                    colors={["transparent", "rgba(5, 4, 4, 0.7)"]}
-                    locations={[0, 1]}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor: status.bg,
-                        borderColor: status.borderColor,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.statusText, { color: status.color }]}>
-                      {t(status.labelKey)}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.cardContent}>
-                  <View style={styles.cardTopRow}>
-                    <View style={styles.cardTopLeft}>
-                      <Text style={[styles.vehicleName, { color: colors.text }]}>
-                        {booking.vehicleName}
+              return (
+                <TouchableOpacity
+                  key={booking.id}
+                  activeOpacity={0.95}
+                  style={[
+                    styles.card,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                  onPress={() =>
+                    router.push(
+                      booking.status === "completed"
+                        ? (`/booking-summary/${booking.id}` as any)
+                        : (`/tracking/${booking.id}` as any),
+                    )
+                  }
+                >
+                  <View style={styles.cardImageWrapper}>
+                    <Image source={{ uri: cover }} style={styles.cardImage} />
+                    <LinearGradient
+                      colors={["transparent", "rgba(5, 4, 4, 0.7)"]}
+                      locations={[0, 1]}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor: status.bg,
+                          borderColor: status.borderColor,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.statusText, { color: status.color }]}>
+                        {t(status.labelKey)}
                       </Text>
-                      <View style={styles.agencyRow}>
-                        <MapPin
-                          size={12}
-                          color={colors.textSecondary}
-                          strokeWidth={1.5}
-                        />
+                    </View>
+                  </View>
+
+                  <View style={styles.cardContent}>
+                    <View style={styles.cardTopRow}>
+                      <View style={styles.cardTopLeft}>
+                        <Text style={[styles.vehicleName, { color: colors.text }]}>
+                          {booking.vehicleName || t("bookings.unknownVehicle", { defaultValue: "Véhicule" })}
+                        </Text>
+                        <View style={styles.agencyRow}>
+                          <MapPin
+                            size={12}
+                            color={colors.textSecondary}
+                            strokeWidth={1.5}
+                          />
+                          <Text
+                            style={[styles.agencyName, { color: colors.textSecondary }]}
+                          >
+                            {booking.reference}
+                          </Text>
+                        </View>
+                      </View>
+                      <ChevronRight
+                        size={20}
+                        color={colors.textSecondary}
+                        strokeWidth={1.5}
+                      />
+                    </View>
+
+                    <View
+                      style={[
+                        styles.dateRow,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(74, 25, 66, 0.25)"
+                            : "rgba(74, 25, 66, 0.08)",
+                        },
+                      ]}
+                    >
+                      <Calendar
+                        size={16}
+                        color={colors.primary}
+                        strokeWidth={1.8}
+                      />
+                      <Text style={[styles.dateText, { color: colors.text }]}>
+                        {booking.startDate} — {booking.endDate}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.cardFooter,
+                        { borderTopColor: colors.border },
+                      ]}
+                    >
+                      <View>
                         <Text
-                          style={[styles.agencyName, { color: colors.textSecondary }]}
+                          style={[styles.totalLabel, { color: colors.textSecondary }]}
                         >
-                          {booking.agencyName}
+                          {t("bookings.totalLabel")}
+                        </Text>
+                        <Text style={[styles.totalValue, { color: colors.text }]}>
+                          {t("common.priceEuro", {
+                            price: centsToUnits(booking.total),
+                          })}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.detailsButton,
+                          { backgroundColor: colors.primary },
+                        ]}
+                      >
+                        <Text style={styles.detailsButtonText}>
+                          {t("bookings.seeDetails")}
                         </Text>
                       </View>
                     </View>
-                    <ChevronRight
-                      size={20}
-                      color={colors.textSecondary}
-                      strokeWidth={1.5}
-                    />
                   </View>
-
-                  <View
-                    style={[
-                      styles.dateRow,
-                      {
-                        backgroundColor: isDark
-                          ? "rgba(74, 25, 66, 0.25)"
-                          : "rgba(74, 25, 66, 0.08)",
-                      },
-                    ]}
-                  >
-                    <Calendar
-                      size={16}
-                      color={colors.primary}
-                      strokeWidth={1.8}
-                    />
-                    <Text style={[styles.dateText, { color: colors.text }]}>
-                      {booking.startDate} — {booking.endDate}
-                    </Text>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.cardFooter,
-                      { borderTopColor: colors.border },
-                    ]}
-                  >
-                    <View>
-                      <Text
-                        style={[styles.totalLabel, { color: colors.textSecondary }]}
-                      >
-                        {t("bookings.totalLabel")}
-                      </Text>
-                      <Text style={[styles.totalValue, { color: colors.text }]}>
-                        {t("common.priceEuro", { price: booking.total })}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.detailsButton,
-                        { backgroundColor: colors.primary },
-                      ]}
-                    >
-                      <Text style={styles.detailsButtonText}>
-                        {t("bookings.seeDetails")}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
 
       <BottomNav />

@@ -15,10 +15,21 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.digitariawebs.myfleet.client",
+      "bundleIdentifier": "com.progix.myfleet-client",
+      "buildNumber": "4",
       "icon": "./assets/logo.png",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true,
+          "NSExceptionDomains": {
+            "217.65.144.155": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": false
+            }
+          }
+        }
       }
     },
     "android": {
@@ -27,7 +38,12 @@
         "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.digitariawebs.myfleet.client"
+      "package": "com.progix.myfleet.client",
+      "versionCode": 4,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/logo.png",
@@ -47,8 +63,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "69b9b069-4353-494b-ac8f-3a08626aadd1"
+        "projectId": "cfa4e46d-bc54-4728-82af-7a949aaf42c9"
       }
-    }
+    },
+    "owner": "iheb1"
   }
 }

@@ -23,7 +23,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import { bookings, agencies } from "@/data/mockData";
+import { useBookingDetail } from "@/hooks/useBookings";
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -96,14 +96,12 @@ export default function CallScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isMuted, setIsMuted] = useState(false);
+  const [isSpeaker, setIsSpeaker] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
 
-  const booking = bookings.find((b) => b.id === id);
-  const agency = agencies.find(
-    (a) => booking && a.name === booking.agencyName
-  );
-  const agencyLogo = agency?.logo ?? "P";
-  const agencyName = booking?.agencyName ?? t("call.fallbackAgency");
+  const { data: booking } = useBookingDetail(id);
+  const agencyLogo = "P";
+  const agencyName = booking?.agencyName || t("call.fallbackAgency");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -147,9 +145,22 @@ export default function CallScreen() {
         <View style={styles.bottomSection}>
           <View style={styles.controlsRow}>
             {/* Speaker */}
-            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.7}>
-              <View style={styles.controlCircle}>
-                <Volume2 size={24} color="#EAEAEA" strokeWidth={1.5} />
+            <TouchableOpacity
+              style={styles.controlBtn}
+              activeOpacity={0.7}
+              onPress={() => setIsSpeaker((v) => !v)}
+            >
+              <View
+                style={[
+                  styles.controlCircle,
+                  isSpeaker && styles.controlCircleActive,
+                ]}
+              >
+                <Volume2
+                  size={24}
+                  color={isSpeaker ? "#1F1F1F" : "#EAEAEA"}
+                  strokeWidth={1.5}
+                />
               </View>
               <Text style={styles.controlLabel}>{t("call.speaker")}</Text>
             </TouchableOpacity>

@@ -69,18 +69,53 @@ async function readBody(response: Response): Promise<unknown> {
   return raw;
 }
 
+const DEFAULT_TIMEOUT_MS = 15_000;
+
 export async function apiRequest<T>(
   path: string,
-  init: RequestInit & { baseUrl?: string } = {},
+  init: RequestInit & { baseUrl?: string; timeoutMs?: number } = {},
 ): Promise<T> {
-  const { baseUrl = BASE_URL, headers, ...rest } = init;
-  const response = await fetch(buildUrl(path, baseUrl), {
-    ...rest,
-    headers: {
-      Accept: "application/json",
-      ...(headers ?? {}),
-    },
-  });
+  const {
+    baseUrl = BASE_URL,
+    headers,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    ...rest
+  } = init;
+
+  const controller = new AbortController();
+  const externalSignal = rest.signal as AbortSignal | undefined;
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", () => controller.abort());
+  }
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, baseUrl), {
+      ...rest,
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        ...(headers ?? {}),
+      },
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiClientError({
+        status: 0,
+        code: "TIMEOUT",
+        message: `Request timed out after ${timeoutMs}ms`,
+      });
+    }
+    throw new ApiClientError({
+      status: 0,
+      code: "NETWORK_ERROR",
+      message: err instanceof Error ? err.message : "Network error",
+    });
+  }
+  clearTimeout(timeoutId);
 
   const body = await readBody(response);
   const errorMessage = `Request failed (${response.status})`;

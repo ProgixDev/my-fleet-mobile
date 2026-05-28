@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { forgotPassword as forgotPasswordRequest } from "@/services/authService";
 import {
   flattenZodErrors,
   loginFormSchema,
@@ -85,6 +86,30 @@ export default function AuthScreen() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const login = useAuthStore((s) => s.login);
   const signup = useAuthStore((s) => s.signup);
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setSubmitError(null);
+    setSuccessMessage(null);
+    const email = formData.email.trim();
+    if (!email) {
+      setErrors({ email: "Enter your email above first" });
+      return;
+    }
+    setIsForgotLoading(true);
+    try {
+      await forgotPasswordRequest(email.toLowerCase());
+      setSuccessMessage(
+        "If an account exists for this email, a reset link has been sent. Check your inbox (and spam folder).",
+      );
+    } catch (e) {
+      setSubmitError(
+        e instanceof Error ? e.message : "Could not send reset email",
+      );
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
 
   const switchTab = (tab: Tab, opts?: { keepSuccess?: boolean }) => {
     setActiveTab(tab);
@@ -345,9 +370,16 @@ export default function AuthScreen() {
 
             {/* Forgot Password */}
             {activeTab === "login" && (
-              <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.forgotRow}
+                activeOpacity={0.7}
+                onPress={handleForgotPassword}
+                disabled={isForgotLoading || isLoading}
+              >
                 <Text style={styles.forgotText}>
-                  {t("auth.forgotPassword")}
+                  {isForgotLoading
+                    ? "Sending..."
+                    : t("auth.forgotPassword")}
                 </Text>
               </TouchableOpacity>
             )}

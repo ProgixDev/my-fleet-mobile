@@ -1,4 +1,17 @@
-import type { DeliveryConfig } from "@/data/mockData";
+/**
+ * Delivery pricing configuration as returned by /agency/public/:id/delivery.
+ * Inlined here to avoid pulling in the mockData module just for the type.
+ */
+export interface DeliveryConfig {
+  enabled: boolean;
+  basePointLabel: string;
+  basePointLat: number;
+  basePointLng: number;
+  ratePerKm: number;
+  currency: string;
+  minFee?: number;
+  maxDistanceKm?: number;
+}
 
 /**
  * Result shape returned by computeDeliveryFee. Use the `ok` discriminator

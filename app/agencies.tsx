@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,20 +6,42 @@ import {
   ScrollView,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Star } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "@/components/BottomNav";
-import { agencies, vehicleImages } from "@/data/mockData";
+import { useAgencies } from "@/hooks/useAgencies";
+import { useTheme } from "@/context/ThemeContext";
+
+// Stable Unsplash fallbacks if agency.logo isn't a URL.
+const FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800",
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800",
+  "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800",
+  "https://images.unsplash.com/photo-1469285994282-454ceb49e63c?w=800",
+];
 
 const cityFilters = ["Toutes", "Nice", "Cannes", "Monaco", "Antibes"];
 
 export default function AgencyListScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [selectedCity, setSelectedCity] = useState("Toutes");
+
+  const cityParam = selectedCity === "Toutes" ? undefined : selectedCity;
+  const { data: agencies = [], isLoading, isError, refetch } = useAgencies(
+    cityParam ? { city: cityParam } : {},
+  );
+
+  const cityFilters = useMemo(() => {
+    const cities = new Set<string>(["Toutes"]);
+    for (const a of agencies) if (a.city) cities.add(a.city);
+    return Array.from(cities);
+  }, [agencies]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -66,53 +88,86 @@ export default function AgencyListScreen() {
           </ScrollView>
 
           {/* Agency Cards */}
-          <View style={styles.cardsList}>
-            {agencies.map((agency, index) => (
-              <TouchableOpacity
-                key={agency.id}
-                activeOpacity={0.9}
-                style={styles.card}
-                onPress={() => router.push(`/agency/${agency.id}` as any)}
-              >
-                {/* Cover Image */}
-                <Image
-                  source={{ uri: vehicleImages[index % vehicleImages.length] }}
-                  style={styles.cardImage}
-                />
+          {isLoading ? (
+            <View style={{ paddingVertical: 40, alignItems: "center" }}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : isError ? (
+            <View style={{ paddingVertical: 40, alignItems: "center", gap: 12 }}>
+              <Text style={{ color: colors.textSecondary }}>
+                {t("agencies.loadError", { defaultValue: "Couldn't load agencies." })}
+              </Text>
+              <TouchableOpacity onPress={() => refetch()} style={{ padding: 12 }}>
+                <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                  {t("common.retry", { defaultValue: "Retry" })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : agencies.length === 0 ? (
+            <View style={{ paddingVertical: 40, alignItems: "center" }}>
+              <Text style={{ color: colors.textSecondary }}>
+                {t("agencies.empty", { defaultValue: "No agencies available yet." })}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.cardsList}>
+              {agencies.map((agency, index) => {
+                const cover =
+                  agency.logo && agency.logo.startsWith("http")
+                    ? agency.logo
+                    : FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+                const initial = (agency.name?.[0] ?? agency.logo ?? "?").toUpperCase();
+                return (
+                  <TouchableOpacity
+                    key={agency.id}
+                    activeOpacity={0.9}
+                    style={styles.card}
+                    onPress={() => router.push(`/agency/${agency.id}` as any)}
+                  >
+                    <Image source={{ uri: cover }} style={styles.cardImage} />
 
-                {/* Info Section */}
-                <View style={styles.cardInfo}>
-                  {/* Overlapping Logo */}
-                  <View style={styles.logoCircle}>
-                    <Text style={styles.logoText}>{agency.logo}</Text>
-                  </View>
-
-                  <View style={styles.cardDetails}>
-                    <View style={styles.cardTopRow}>
-                      <View style={styles.cardTopLeft}>
-                        <Text style={styles.agencyName}>{agency.name}</Text>
-                        <Text style={styles.agencySub}>
-                          {t("agencies.vehiclesCount", { city: agency.city, count: agency.vehicles })}
-                        </Text>
+                    <View style={styles.cardInfo}>
+                      <View style={styles.logoCircle}>
+                        <Text style={styles.logoText}>{initial}</Text>
                       </View>
-                      <View style={styles.ratingRow}>
-                        <Star
-                          size={14}
-                          fill="#F1C40F"
-                          color="#F1C40F"
-                          strokeWidth={1.5}
-                        />
-                        <Text style={styles.ratingText}>{agency.rating}</Text>
-                        <Text style={styles.reviewCount}>
-                          {t("agencies.reviewsCount", { count: agency.reviews })}
-                        </Text>
+
+                      <View style={styles.cardDetails}>
+                        <View style={styles.cardTopRow}>
+                          <View style={styles.cardTopLeft}>
+                            <Text style={styles.agencyName}>{agency.name}</Text>
+                            <Text style={styles.agencySub}>
+                              {t("agencies.vehiclesCount", {
+                                city: agency.city ?? agency.country ?? "",
+                                count: agency.vehicleCount ?? 0,
+                              })}
+                            </Text>
+                          </View>
+                          <View style={styles.ratingRow}>
+                            <Star
+                              size={14}
+                              fill="#F1C40F"
+                              color="#F1C40F"
+                              strokeWidth={1.5}
+                            />
+                            <Text style={styles.ratingText}>
+                              {agency.rating != null
+                                ? agency.rating.toFixed(1)
+                                : "—"}
+                            </Text>
+                            <Text style={styles.reviewCount}>
+                              {t("agencies.reviewsCount", {
+                                count: agency.reviewCount ?? 0,
+                              })}
+                            </Text>
+                          </View>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
 
         <BottomNav />

@@ -6,6 +6,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -57,6 +58,7 @@ export default function VehicleDetailScreen() {
   } = useVehicleDetail(id ?? null, agencyId);
 
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   const galleryRef = useRef<ScrollView>(null);
 
   const galleryUrls = useMemo(() => {
@@ -179,11 +181,28 @@ export default function VehicleDetailScreen() {
             </TouchableOpacity>
 
             <View style={styles.heroRightBtns}>
-              <TouchableOpacity style={styles.heroBtn} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.heroBtn}
+                activeOpacity={0.7}
+                onPress={() => {
+                  Share.share({
+                    message: "Check this vehicle on MyFleet.",
+                  }).catch(() => {});
+                }}
+              >
                 <Share2 size={20} color="#FFFFFF" strokeWidth={1.8} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.heroBtn} activeOpacity={0.7}>
-                <Heart size={20} color="#FFFFFF" strokeWidth={1.8} />
+              <TouchableOpacity
+                style={styles.heroBtn}
+                activeOpacity={0.7}
+                onPress={() => setIsFavorite((v) => !v)}
+              >
+                <Heart
+                  size={20}
+                  color={isFavorite ? "#EF4444" : "#FFFFFF"}
+                  fill={isFavorite ? "#EF4444" : "transparent"}
+                  strokeWidth={1.8}
+                />
               </TouchableOpacity>
             </View>
           </SafeAreaView>

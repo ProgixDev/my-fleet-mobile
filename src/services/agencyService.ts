@@ -11,6 +11,31 @@ export interface PublicAgency {
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  vehicleCount?: number;
+  rating?: number | null;
+  reviewCount?: number;
+}
+
+export interface ListPublicAgenciesFilters {
+  city?: string;
+  country?: string;
+  search?: string;
+}
+
+export async function listPublicAgencies(
+  filters: ListPublicAgenciesFilters = {},
+): Promise<PublicAgency[]> {
+  const headers = await getAuthHeader();
+  const qs = new URLSearchParams();
+  if (filters.city) qs.set("city", filters.city);
+  if (filters.country) qs.set("country", filters.country);
+  if (filters.search) qs.set("search", filters.search);
+  const query = qs.toString();
+  return apiRequest<PublicAgency[]>(
+    `/agency/public${query ? `?${query}` : ""}`,
+    { headers },
+  );
 }
 
 export interface PublicVehicle {

@@ -106,7 +106,16 @@ export async function logout(): Promise<void> {
 }
 
 export async function forgotPassword(email: string): Promise<void> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  // Tell Supabase to redirect back to our reset-password screen after the
+  // user clicks the recovery link. Supabase appends the access/refresh
+  // tokens to the URL hash; our screen picks them up to update the password.
+  const redirectTo =
+    typeof window !== "undefined" && window.location?.origin
+      ? `${window.location.origin}/reset-password`
+      : "myfleet://reset-password";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
   if (error) throw new Error(error.message);
 }
 

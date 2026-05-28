@@ -24,13 +24,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 
 import { useTheme } from "@/context/ThemeContext";
-import {
-  bookings,
-  vehicles,
-  vehicleImages,
-  type Booking,
-  type VehicleFinalState,
-} from "@/data/mockData";
+import { useBookingDetail } from "@/hooks/useBookings";
+
+type VehicleFinalState = "ok" | "minor-damage" | "major-damage";
+
+const FALLBACK_HERO =
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1200";
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -91,11 +90,8 @@ export default function BookingSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
 
-  const booking: Booking | undefined = bookings.find((b) => b.id === id);
-  const vehicle = vehicles.find((v) => v.id === booking?.vehicleId);
-  const heroImage =
-    booking?.postRentalPhotos?.[0] ??
-    vehicleImages[(Number(id) - 1 + vehicleImages.length) % vehicleImages.length];
+  const { data: booking } = useBookingDetail(id);
+  const heroImage = FALLBACK_HERO;
 
   if (!booking) {
     return (
@@ -119,12 +115,16 @@ export default function BookingSummaryScreen() {
     );
   }
 
-  const finalState = getFinalStateInfo(booking.vehicleFinalState);
-  const FinalStateIcon = finalState.icon;
+  // Final-state classification: backend doesn't ship a final-state field yet,
+  // so we infer from km overage as a best-effort.
   const overage = booking.kmOverage ?? 0;
   const overageCost = booking.overageCost ?? 0;
   const hasOverage = overage > 0;
-  const photos = booking.postRentalPhotos ?? [];
+  const vehicleFinalState: VehicleFinalState =
+    overage === 0 ? "ok" : overage > 100 ? "major-damage" : "minor-damage";
+  const finalState = getFinalStateInfo(vehicleFinalState);
+  const FinalStateIcon = finalState.icon;
+  const photos: string[] = [];
 
   // Tone → color mapping for the État badge
   const stateToneColor =
@@ -195,7 +195,7 @@ export default function BookingSummaryScreen() {
               </Text>
               <Text style={styles.heroVehicleName}>{booking.vehicleName}</Text>
               <Text style={styles.heroAgency}>
-                {vehicle?.agencyName ?? booking.agencyName}
+                {booking.agencyName}
               </Text>
             </View>
           </View>

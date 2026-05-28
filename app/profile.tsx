@@ -28,9 +28,9 @@ import type { LucideIcon } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BottomNav } from "@/components/BottomNav";
 import { useTheme } from "@/context/ThemeContext";
-import { loyaltyTiers, loyaltyHistory } from "@/data/mockData";
 import { setAppLocale, SUPPORTED_LOCALES, type AppLocale } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useLoyaltyStatus } from "@/hooks/useLoyalty";
 
 function getInitials(name: string | undefined, email: string | undefined) {
   const source = (name ?? email ?? "").trim();
@@ -42,9 +42,6 @@ function getInitials(name: string | undefined, email: string | undefined) {
   return source.slice(0, 2).toUpperCase();
 }
 
-const currentPoints = 2480;
-const currentTier = loyaltyTiers[1]!; // Argent
-const nextTier = loyaltyTiers[2]!; // Or
 
 interface AccountItem {
   icon: LucideIcon;
@@ -69,9 +66,17 @@ export default function ProfileScreen() {
   const [languageSheetOpen, setLanguageSheetOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { data: loyalty } = useLoyaltyStatus();
 
   const initials = getInitials(user?.name, user?.email);
   const displayName = user?.name?.trim() || user?.email || "—";
+
+  const currentPoints = loyalty?.points ?? 0;
+  const currentTierName = loyalty?.tier ?? "—";
+  const nextTierName = loyalty?.nextTier ?? null;
+  const pointsToNextTier = loyalty?.pointsToNextTier ?? 0;
+  const tierBenefits: string[] = [];
+  const history = loyalty?.history ?? [];
 
   const handleLogout = () => {
     Alert.alert(t("profile.logout"), "", [
@@ -148,23 +153,39 @@ export default function ProfileScreen() {
                 value: currentPoints.toLocaleString(),
               })}
             </Text>
-            <Text style={styles.loyaltyNext}>
-              {t("profile.nextTier", {
-                name: nextTier.name,
-                value: nextTier.points.toLocaleString(),
-              })}
-            </Text>
+            {nextTierName ? (
+              <Text style={styles.loyaltyNext}>
+                {t("profile.nextTier", {
+                  name: nextTierName,
+                  value: pointsToNextTier.toLocaleString(),
+                })}
+              </Text>
+            ) : null}
 
             <View style={styles.benefitsBox}>
               <Text style={styles.benefitsTitle}>
-                {t("profile.benefitsTitle", { tier: currentTier.name })}
+                {t("profile.benefitsTitle", { tier: currentTierName })}
               </Text>
-              {currentTier.benefits.map((benefit, i) => (
-                <View key={i} style={styles.benefitRow}>
-                  <View style={styles.benefitDot} />
-                  <Text style={styles.benefitText}>{benefit}</Text>
-                </View>
-              ))}
+              {tierBenefits.length === 0 ? (
+                <Text
+                  style={{
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: 13,
+                  }}
+                >
+                  {t("profile.noBenefitsYet", {
+                    defaultValue:
+                      "Réservez pour accumuler des points et débloquer des avantages.",
+                  })}
+                </Text>
+              ) : (
+                tierBenefits.map((benefit, i) => (
+                  <View key={i} style={styles.benefitRow}>
+                    <View style={styles.benefitDot} />
+                    <Text style={styles.benefitText}>{benefit}</Text>
+                  </View>
+                ))
+              )}
             </View>
           </LinearGradient>
 
@@ -174,7 +195,7 @@ export default function ProfileScreen() {
               {t("profile.loyaltyHistory")}
             </Text>
             <View style={styles.historyList}>
-              {loyaltyHistory.slice(0, 3).map((item) => (
+              {history.slice(0, 3).map((item) => (
                 <View
                   key={item.id}
                   style={[
@@ -186,7 +207,7 @@ export default function ProfileScreen() {
                   ]}
                 >
                   <View style={styles.historyLeft}>
-                    {item.type === "earned" ? (
+                    {item.points >= 0 ? (
                       <TrendingUp size={20} color="#2ECC71" strokeWidth={1.5} />
                     ) : (
                       <TrendingDown
@@ -202,7 +223,7 @@ export default function ProfileScreen() {
                           { color: colors.text },
                         ]}
                       >
-                        {item.description}
+                        {item.label}
                       </Text>
                       <Text
                         style={[
@@ -218,13 +239,12 @@ export default function ProfileScreen() {
                     style={[
                       styles.historyAmount,
                       {
-                        color:
-                          item.type === "earned" ? "#2ECC71" : colors.error,
+                        color: item.points >= 0 ? "#2ECC71" : colors.error,
                       },
                     ]}
                   >
-                    {item.amount > 0 ? "+" : ""}
-                    {item.amount}
+                    {item.points >= 0 ? "+" : ""}
+                    {item.points}
                   </Text>
                 </View>
               ))}

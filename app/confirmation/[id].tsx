@@ -19,8 +19,9 @@ import {
   Car,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { vehicles, agencies, bookings } from "@/data/mockData";
 import { useTheme } from "@/context/ThemeContext";
+import { useBookingDetail } from "@/hooks/useBookings";
+import { centsToUnits } from "@/utils/money";
 
 export default function ConfirmationScreen() {
   const router = useRouter();
@@ -29,21 +30,19 @@ export default function ConfirmationScreen() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
-  const booking = bookings.find((b) => b.id === id);
-  const vehicle = vehicles.find((v) => v.id === (booking?.vehicleId ?? id));
-  const agency = agencies.find((a) => a.id === vehicle?.agencyId);
+  const { data: booking } = useBookingDetail(id);
 
   const vehicleName =
-    booking?.vehicleName ?? vehicle?.name ?? t("confirmation.vehicleFallback");
+    booking?.vehicleName ?? t("confirmation.vehicleFallback");
   const agencyName =
-    booking?.agencyName ?? agency?.name ?? t("confirmation.agencyFallback");
-  const reference = booking?.reference ?? `MF-2026-0${847 + Number(id || 0)}`;
-  const total = booking?.total ?? (vehicle ? vehicle.price * 3 : 0);
-  const startDate = booking?.startDate ?? "2026-06-12";
-  const endDate = booking?.endDate ?? "2026-06-15";
-  const startTime = booking?.startTime ?? "10:00";
-  const endTime = booking?.endTime ?? "18:00";
-  const deliveryAddress = booking?.deliveryAddress ?? "14 Rue de France, Nice";
+    booking?.agencyName ?? t("confirmation.agencyFallback");
+  const reference = booking?.reference ?? "—";
+  const total = booking ? centsToUnits(booking.total) : 0;
+  const startDate = booking?.startDate ?? "";
+  const endDate = booking?.endDate ?? "";
+  const startTime = booking?.startTime ?? "";
+  const endTime = booking?.endTime ?? "";
+  const deliveryAddress = "";
   const withChauffeur = booking?.withChauffeur ?? false;
 
   return (

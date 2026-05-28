@@ -27,12 +27,12 @@ import {
   MapPin,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import {
-  vehicles,
-  agencies,
-  vehicleImages,
-  cities,
-} from "@/data/mockData";
+import { useAgencies, useAgencyVehicles } from "@/hooks/useAgencies";
+import { useAgencyStore } from "@/stores/useAgencyStore";
+import { centsToUnits } from "@/utils/money";
+
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -265,35 +265,70 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  const pairedAgencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const { data: agencies = [] } = useAgencies({});
+  const { data: vehicles = [] } = useAgencyVehicles(pairedAgencyId ?? undefined);
+
   const results = useMemo(() => {
     const out: SearchResult[] = [];
     const q = searchQuery.toLowerCase().trim();
 
     if (categoryFilter) {
-      vehicles.forEach((v, i) => {
-        const match = categoryFilter === "chauffeur" ? v.chauffeurAvailable : v.category.toLowerCase() === categoryFilter.toLowerCase();
+      vehicles.forEach((v) => {
+        const match =
+          v.category?.toLowerCase() === categoryFilter.toLowerCase();
         if (match) {
-          const unavailable = datesSelected && isVehicleUnavailable(v.id, startDate, endDate);
-          out.push({ type: "vehicle", id: v.id, title: v.name, subtitle: `${v.year} • ${v.transmission} • ${v.fuel}`, imageUri: vehicleImages[i], price: v.price, unavailable, unavailableReason: unavailable ? t(getUnavailabilityReasonKey(v.id, startDate, endDate)) : undefined });
+          out.push({
+            type: "vehicle",
+            id: v.id,
+            title: v.name,
+            subtitle: `${v.year ?? ""} • ${v.transmission ?? ""} • ${v.fuelType ?? ""}`,
+            imageUri: v.thumbnailUrl ?? FALLBACK_IMG,
+            price: centsToUnits(v.dailyRate ?? 0),
+          });
         }
       });
     } else if (q) {
-      vehicles.forEach((v, i) => {
-        if (v.name.toLowerCase().includes(q) || v.category.toLowerCase().includes(q) || v.fuel.toLowerCase().includes(q) || v.agencyName.toLowerCase().includes(q)) {
-          const unavailable = datesSelected && isVehicleUnavailable(v.id, startDate, endDate);
-          out.push({ type: "vehicle", id: v.id, title: v.name, subtitle: `${v.year} • ${v.transmission} • ${v.fuel}`, imageUri: vehicleImages[i], price: v.price, unavailable, unavailableReason: unavailable ? t(getUnavailabilityReasonKey(v.id, startDate, endDate)) : undefined });
+      vehicles.forEach((v) => {
+        if (
+          v.name?.toLowerCase().includes(q) ||
+          v.category?.toLowerCase().includes(q) ||
+          v.fuelType?.toLowerCase().includes(q) ||
+          v.brand?.toLowerCase().includes(q)
+        ) {
+          out.push({
+            type: "vehicle",
+            id: v.id,
+            title: v.name,
+            subtitle: `${v.year ?? ""} • ${v.transmission ?? ""} • ${v.fuelType ?? ""}`,
+            imageUri: v.thumbnailUrl ?? FALLBACK_IMG,
+            price: centsToUnits(v.dailyRate ?? 0),
+          });
         }
       });
-      agencies.forEach((a, i) => {
-        if (a.name.toLowerCase().includes(q) || a.city.toLowerCase().includes(q)) {
-          out.push({ type: "agency", id: a.id, title: a.name, subtitle: t("agencies.vehiclesCount", { city: a.city, count: a.vehicles }), imageUri: vehicleImages[i % vehicleImages.length], rating: a.rating });
+      agencies.forEach((a) => {
+        if (
+          a.name?.toLowerCase().includes(q) ||
+          a.city?.toLowerCase().includes(q) ||
+          a.address?.toLowerCase().includes(q)
+        ) {
+          out.push({
+            type: "agency",
+            id: a.id,
+            title: a.name,
+            subtitle: t("agencies.vehiclesCount", {
+              city: a.city ?? a.country ?? "",
+              count: a.vehicleCount ?? 0,
+            }),
+            imageUri:
+              a.logo && a.logo.startsWith("http") ? a.logo : FALLBACK_IMG,
+            rating: a.rating ?? undefined,
+          });
         }
       });
     }
-    // Sort: available first, unavailable last
-    out.sort((a, b) => (a.unavailable ? 1 : 0) - (b.unavailable ? 1 : 0));
     return out;
-  }, [searchQuery, categoryFilter, datesSelected, startDate, endDate, t]);
+  }, [searchQuery, categoryFilter, vehicles, agencies, t]);
 
   const isSearching = searchQuery.length > 0 || categoryFilter !== null;
 
@@ -446,10 +481,14 @@ export default function SearchScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t("search.suggestionsTitle")}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScroll}>
-                {vehicles.slice(0, 4).map((v, i) => (
+                {vehicles.slice(0, 4).map((v) => (
                   <TouchableOpacity key={v.id} style={styles.suggestionCard} activeOpacity={0.85} onPress={() => router.push(`/vehicle/${v.id}` as any)}>
-                    <Image source={{ uri: vehicleImages[i] }} style={styles.suggestionImage} />
-                    <View style={styles.suggestionInfo}><Text style={styles.suggestionName} numberOfLines={1}>{v.name}</Text><Text style={styles.suggestionPrice}>{t("common.pricePerDay", { price: v.price })}</Text></View>
+                    {v.thumbnailUrl ? (
+                      <Image source={{ uri: v.thumbnailUrl }} style={styles.suggestionImage} />
+                    ) : (
+                      <View style={styles.suggestionImage} />
+                    )}
+                    <View style={styles.suggestionInfo}><Text style={styles.suggestionName} numberOfLines={1}>{v.name}</Text><Text style={styles.suggestionPrice}>{t("common.pricePerDay", { price: v.dailyRate })}</Text></View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
