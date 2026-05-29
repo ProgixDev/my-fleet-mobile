@@ -15,6 +15,7 @@ import { Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
+import { isLocalDemoMode } from "@/constants/demoMode";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { forgotPassword as forgotPasswordRequest } from "@/services/authService";
@@ -86,6 +87,7 @@ export default function AuthScreen() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const login = useAuthStore((s) => s.login);
   const signup = useAuthStore((s) => s.signup);
+  const startDemoSession = useAuthStore((s) => s.startDemoSession);
   const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   const handleForgotPassword = async () => {
@@ -248,6 +250,48 @@ export default function AuthScreen() {
           </View>
 
           {/* Form */}
+          <View style={styles.infoBanner}>
+            <Text style={styles.infoTitle}>
+              {t("auth.clientPairingTitle", {
+                defaultValue: "Client account first",
+              })}
+            </Text>
+            <Text style={styles.infoSubtitle}>
+              {t("auth.clientPairingHint", {
+                defaultValue:
+                  "Create your account, then scan the agency QR code to connect this app locally.",
+              })}
+            </Text>
+          </View>
+
+          {isLocalDemoMode ? (
+            <TouchableOpacity
+              onPress={() => {
+                startDemoSession();
+                router.replace("/scan");
+              }}
+              activeOpacity={0.85}
+              style={styles.demoCard}
+            >
+              <View style={styles.demoTag}>
+                <Text style={styles.demoTagText}>
+                  {t("auth.demoModeTag", { defaultValue: "Demo mode" })}
+                </Text>
+              </View>
+              <Text style={styles.demoTitle}>
+                {t("auth.demoModeTitle", {
+                  defaultValue: "Try the app locally",
+                })}
+              </Text>
+              <Text style={styles.demoSubtitle}>
+                {t("auth.demoModeHint", {
+                  defaultValue:
+                    "Open a temporary client session and scan the demo QR without the backend.",
+                })}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
           <View style={styles.form}>
             {activeTab === "signup" && (
               <>
@@ -492,6 +536,63 @@ const styles = StyleSheet.create({
   // Form
   form: {
     gap: 10,
+  },
+  infoBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: "rgba(74, 25, 66, 0.22)",
+    borderWidth: 1,
+    borderColor: "rgba(234, 234, 234, 0.08)",
+    marginBottom: 14,
+  },
+  infoTitle: {
+    fontFamily: "Poppins_700Bold",
+    fontSize: 14,
+    color: "#EAEAEA",
+    marginBottom: 4,
+  },
+  infoSubtitle: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 12,
+    lineHeight: 18,
+    color: "rgba(234, 234, 234, 0.68)",
+  },
+  demoCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: "rgba(46, 28, 43, 0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(234, 234, 234, 0.08)",
+    marginBottom: 14,
+  },
+  demoTag: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(74, 25, 66, 0.3)",
+    marginBottom: 10,
+  },
+  demoTagText: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 10,
+    letterSpacing: 0.6,
+    color: "#F4C2ED",
+    textTransform: "uppercase",
+  },
+  demoTitle: {
+    fontFamily: "Poppins_700Bold",
+    fontSize: 15,
+    color: "#EAEAEA",
+    marginBottom: 4,
+  },
+  demoSubtitle: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 12,
+    lineHeight: 18,
+    color: "rgba(234, 234, 234, 0.68)",
   },
   inputRow: {
     flexDirection: "row",

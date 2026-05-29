@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,6 +25,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { EmptyState } from "@/components/ui/EmptyState";
+import { DEMO_AGENCY_ID, isLocalDemoMode } from "@/constants/demoMode";
 import { ApiClientError } from "@/services/api";
 import { ProfileIncompleteError, usePairWithAgency } from "@/hooks/usePairing";
 
@@ -41,22 +42,24 @@ type Phase =
 function parseQrPayload(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  // Accept deep-link forms like myfleet://pair/<idOrSlug> or
-  // https://myfleet.app/pair/<idOrSlug>, otherwise treat as raw id/slug.
-  const deepLink = trimmed.match(
-    /(?:myfleet:\/\/|https?:\/\/[^/]+\/)pair\/([^/?#]+)/i,
-  );
+  // Accept deep-link forms like myfleet://pair/<idOrSlug>,
+  // exp://.../--/pair/<idOrSlug>, or https://.../pair/<idOrSlug>.
+  const deepLink = trimmed.match(/(?:^|\/)(?:pair|a)\/([^/?#]+)/i);
   if (deepLink && deepLink[1]) {
     return decodeURIComponent(deepLink[1]);
   }
-  // Reject obviously-non-id payloads (URLs to other domains, long text)
+
+  // Reject non-id payloads (URLs to other domains, long text, whitespace).
+  if (trimmed.includes("://")) return null;
   if (trimmed.length > 128) return null;
   if (/\s/.test(trimmed)) return null;
+  if (!/^[\w.-]+$/.test(trimmed)) return null;
   return trimmed;
 }
 
 export default function ScanScreen() {
   const router = useRouter();
+  const { code } = useLocalSearchParams<{ code?: string }>();
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [flashOn, setFlashOn] = useState(false);
@@ -185,6 +188,14 @@ export default function ScanScreen() {
     inputRange: [0, 1],
     outputRange: [0.3, 1],
   });
+
+  useEffect(() => {
+    const codeParam = Array.isArray(code) ? code[0] : code;
+    if (!codeParam || phase.kind !== "idle") return;
+    if (codeParam === lastScannedRef.current) return;
+    lastScannedRef.current = codeParam;
+    void handleBarcode({ data: codeParam });
+  }, [code, handleBarcode, phase.kind]);
 
   // ── Permission gating ─────────────────────────────────────────────────────
   if (!permission) {
@@ -546,6 +557,38 @@ export default function ScanScreen() {
             >
               {t("scan.subline")}
             </Text>
+
+            {isLocalDemoMode ? (
+              <Pressable
+                onPress={() => {
+                  setPhase({ kind: "idle" });
+                  void handleBarcode({ data: DEMO_AGENCY_ID });
+                }}
+                style={({ pressed }) => ({
+                  marginTop: 16,
+                  alignSelf: "center",
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 999,
+                  backgroundColor: pressed
+                    ? "rgba(74, 25, 66, 0.6)"
+                    : "rgba(74, 25, 66, 0.42)",
+                  borderWidth: 1,
+                  borderColor: "rgba(234, 234, 234, 0.1)",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Poppins_600SemiBold",
+                    fontSize: 12,
+                    letterSpacing: 0.3,
+                    color: "#EAEAEA",
+                  }}
+                >
+                  {t("scan.simulateButton")}
+                </Text>
+              </Pressable>
+            ) : null}
           </BlurView>
         </View>
       </SafeAreaView>

@@ -1,3 +1,5 @@
+import { isLocalDemoMode } from "@/constants/demoMode";
+import { reviews as demoReviews } from "@/data/mockData";
 import { apiRequest } from "@/services/api";
 import { getAuthHeader } from "@/services/authHeader";
 
@@ -16,7 +18,25 @@ export interface AgencyRating {
   count: number;
 }
 
+function mapDemoReview(review: (typeof demoReviews)[number], index: number): AgencyReview {
+  return {
+    id: review.id,
+    agencyId: review.agencyId,
+    userId: `demo-user-${index}`,
+    userName: review.userName,
+    rating: review.rating,
+    comment: review.comment,
+    createdAt: new Date(Date.now() - index * 86400000).toISOString(),
+  };
+}
+
 export async function listAgencyReviews(agencyId: string): Promise<AgencyReview[]> {
+  if (isLocalDemoMode) {
+    return demoReviews
+      .filter((review) => review.agencyId === agencyId)
+      .map(mapDemoReview);
+  }
+
   const headers = await getAuthHeader();
   return apiRequest<AgencyReview[]>(
     `/reviews/agency/${encodeURIComponent(agencyId)}`,
@@ -25,6 +45,16 @@ export async function listAgencyReviews(agencyId: string): Promise<AgencyReview[
 }
 
 export async function getAgencyRating(agencyId: string): Promise<AgencyRating> {
+  if (isLocalDemoMode) {
+    const items = demoReviews.filter((review) => review.agencyId === agencyId);
+    if (items.length === 0) return { average: null, count: 0 };
+    const sum = items.reduce((acc, item) => acc + item.rating, 0);
+    return {
+      average: Number((sum / items.length).toFixed(1)),
+      count: items.length,
+    };
+  }
+
   const headers = await getAuthHeader();
   return apiRequest<AgencyRating>(
     `/reviews/agency/${encodeURIComponent(agencyId)}/rating`,
@@ -38,6 +68,18 @@ export async function postReview(payload: {
   comment: string;
   bookingId?: string;
 }): Promise<AgencyReview> {
+  if (isLocalDemoMode) {
+    return {
+      id: `demo-review-${Date.now()}`,
+      agencyId: payload.agencyId,
+      userId: "demo-client",
+      userName: "Demo Client",
+      rating: payload.rating,
+      comment: payload.comment,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
   const headers = await getAuthHeader();
   return apiRequest<AgencyReview>("/reviews", {
     method: "POST",

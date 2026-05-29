@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { isLocalDemoMode } from "@/constants/demoMode";
 import { getPublicAgency, type PublicAgency } from "@/services/agencyService";
 import { pairWithAgency } from "@/services/profileService";
 import { ApiClientError } from "@/services/api";
@@ -30,6 +31,9 @@ export function usePairWithAgency() {
   return useMutation<PublicAgency, Error, string>({
     mutationFn: async (idOrSlug) => {
       const agency = await getPublicAgency(idOrSlug);
+      if (isLocalDemoMode) {
+        return agency;
+      }
       try {
         await pairWithAgency(agency.id);
       } catch (err) {

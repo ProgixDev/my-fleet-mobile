@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { supabase } from "@/lib/supabase";
+import { DEMO_AGENCY_ID, isLocalDemoMode } from "@/constants/demoMode";
 import {
   logout as supabaseSignOut,
   requestEmailOtp,
@@ -41,11 +42,20 @@ interface AuthActions {
     password: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  startDemoSession: () => void;
   setLoading: (loading: boolean) => void;
   updateUser: (updates: Partial<AuthUser>) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
+
+const DEMO_USER: AuthUser = {
+  id: "demo-client",
+  name: "Demo Client",
+  email: "demo@myfleet.local",
+  role: "client",
+  agencyId: DEMO_AGENCY_ID,
+};
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -163,6 +173,16 @@ export const useAuthStore = create<AuthStore>()(
           user: null,
           isAuthenticated: false,
           isLoading: false,
+        });
+      },
+
+      startDemoSession: () => {
+        if (!isLocalDemoMode) return;
+        set({
+          user: DEMO_USER,
+          isAuthenticated: true,
+          isLoading: false,
+          isHydrated: true,
         });
       },
 
