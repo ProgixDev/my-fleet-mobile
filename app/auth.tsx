@@ -421,6 +421,20 @@ export default function AuthScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Phone login entry point — Supabase native phone OTP */}
+            <TouchableOpacity
+              style={styles.phoneButton}
+              activeOpacity={0.7}
+              disabled={isLoading}
+              onPress={() => router.push("/phone-login")}
+              testID="auth-continue-with-phone-button"
+            >
+              <Phone size={20} color="#EAEAEA" strokeWidth={1.5} />
+              <Text style={styles.socialText}>
+                {t("auth.continueWithPhone")}
+              </Text>
+            </TouchableOpacity>
+
             {/* Bottom Link */}
             <View style={styles.bottomLink}>
               <Text style={styles.bottomLinkSecondary}>
@@ -600,6 +614,18 @@ const styles = StyleSheet.create({
   },
   socialButtonDisabled: {
     opacity: 0.5,
+  },
+  phoneButton: {
+    marginTop: 10,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: "#2E1C2B",
+    borderWidth: 1,
+    borderColor: "rgba(234, 234, 234, 0.08)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   socialText: {
     fontFamily: "Poppins_500Medium",

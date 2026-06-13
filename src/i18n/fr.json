@@ -75,7 +75,28 @@
     "hasAccount": "Déjà un compte ? ",
     "noAccount": "Pas encore de compte ? ",
     "switchToLogin": "Se connecter",
-    "switchToSignup": "S'inscrire"
+    "switchToSignup": "S'inscrire",
+    "continueWithPhone": "Continuer avec le téléphone"
+  },
+  "phoneAuth": {
+    "phoneTitle": "Connexion par téléphone",
+    "phoneSubtitle": "Saisissez votre numéro avec l'indicatif du pays. Nous vous enverrons un code de vérification par SMS.",
+    "phonePlaceholder": "+1 514 400 7891",
+    "phoneHint": "Incluez l'indicatif du pays, par ex. +1 pour le Canada/États-Unis.",
+    "sendCode": "Envoyer le code",
+    "codeTitle": "Saisissez le code",
+    "codeSubtitle": "Nous avons envoyé un code à 6 chiffres au {{phone}}.",
+    "codePlaceholder": "123456",
+    "verify": "Vérifier",
+    "resend": "Renvoyer le code",
+    "resendWithCountdown": "Renvoyer le code ({{seconds}}s)",
+    "changeNumber": "Modifier le numéro",
+    "errors": {
+      "invalidPhone": "Saisissez un numéro valide au format international (par ex. +15144007891).",
+      "invalidCode": "Saisissez le code à 6 chiffres reçu.",
+      "sendFailed": "Impossible d'envoyer le code. Veuillez réessayer.",
+      "verifyFailed": "Code invalide ou expiré. Veuillez réessayer."
+    }
   },
   "otp": {
     "title": "Vérifiez votre numéro",

@@ -6,10 +6,12 @@ import { supabase } from "@/lib/supabase";
 import {
   logout as supabaseSignOut,
   requestEmailOtp,
+  requestPhoneOtp,
   signInWithEmail,
   signUpClient,
   validateSession,
   verifyEmailOtp,
+  verifyPhoneOtp,
   type AuthUser,
 } from "@/services/authService";
 
@@ -34,6 +36,8 @@ interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
   requestOtp: (email: string) => Promise<void>;
   loginWithOtp: (email: string, token: string) => Promise<void>;
+  requestPhoneOtp: (phone: string) => Promise<void>;
+  loginWithPhoneOtp: (phone: string, token: string) => Promise<void>;
   signup: (input: {
     name: string;
     email: string;
@@ -127,6 +131,27 @@ export const useAuthStore = create<AuthStore>()(
             email.trim().toLowerCase(),
             token.trim(),
           );
+          const user = await validateSession(session.accessToken);
+          if (user.role !== "client") {
+            await supabaseSignOut();
+            set({ isLoading: false });
+            throw new WrongAppError();
+          }
+          set({ user, isAuthenticated: true, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      requestPhoneOtp: async (phone) => {
+        await requestPhoneOtp(phone.trim());
+      },
+
+      loginWithPhoneOtp: async (phone, token) => {
+        set({ isLoading: true });
+        try {
+          const session = await verifyPhoneOtp(phone.trim(), token.trim());
           const user = await validateSession(session.accessToken);
           if (user.role !== "client") {
             await supabaseSignOut();

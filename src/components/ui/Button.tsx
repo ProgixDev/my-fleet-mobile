@@ -16,6 +16,7 @@ interface ButtonProps {
   disabled?: boolean;
   onPress?: () => void;
   style?: ViewStyle;
+  testID?: string;
 }
 
 const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
@@ -48,6 +49,7 @@ export function Button({
   disabled = false,
   onPress,
   style,
+  testID,
 }: ButtonProps) {
   const variantStyle = variantStyles[variant];
 
@@ -56,6 +58,7 @@ export function Button({
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.85}
+      testID={testID}
       style={[
         styles.base,
         variantStyle.container,

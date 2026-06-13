@@ -1,0 +1,265 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, MessageSquare } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/Button";
+import { useTheme } from "@/context/ThemeContext";
+import { useAuthStore } from "@/stores/useAuthStore";
+
+const RESEND_COUNTDOWN = 30;
+
+export default function PhoneVerifyScreen() {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const params = useLocalSearchParams<{ phone?: string }>();
+  const phone = typeof params.phone === "string" ? params.phone : "";
+
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [resendIn, setResendIn] = useState(RESEND_COUNTDOWN);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const loginWithPhoneOtp = useAuthStore((s) => s.loginWithPhoneOtp);
+  const requestPhoneOtp = useAuthStore((s) => s.requestPhoneOtp);
+
+  // Missing phone param means this screen was opened out of flow; bounce back.
+  useEffect(() => {
+    if (!phone) {
+      router.replace("/phone-login");
+    }
+  }, [phone, router]);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setResendIn((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const handleVerify = async () => {
+    setError(null);
+    const token = code.replace(/\D/g, "").trim();
+    if (token.length !== 6) {
+      setError(t("phoneAuth.errors.invalidCode"));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await loginWithPhoneOtp(phone, token);
+      router.replace("/home");
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : t("phoneAuth.errors.verifyFailed"),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendIn > 0) return;
+    setError(null);
+    try {
+      await requestPhoneOtp(phone);
+      setResendIn(RESEND_COUNTDOWN);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : t("phoneAuth.errors.sendFailed"),
+      );
+    }
+  };
+
+  const busy = submitting || isLoading;
+  const iconColor = colors.textSecondary;
+
+  return (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.flex}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            activeOpacity={0.7}
+            disabled={busy}
+            testID="phone-verify-back-button"
+          >
+            <ArrowLeft size={22} color={colors.text} strokeWidth={1.5} />
+          </TouchableOpacity>
+
+          <Text style={[styles.title, { color: colors.text }]}>
+            {t("phoneAuth.codeTitle")}
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {t("phoneAuth.codeSubtitle", { phone })}
+          </Text>
+
+          <View style={styles.inputRow}>
+            <MessageSquare size={20} color={iconColor} strokeWidth={1.5} />
+            <TextInput
+              placeholder={t("phoneAuth.codePlaceholder")}
+              placeholderTextColor="rgba(234, 234, 234, 0.4)"
+              value={code}
+              onChangeText={(text) => setCode(text.replace(/\D/g, ""))}
+              style={styles.input}
+              keyboardType="number-pad"
+              maxLength={6}
+              autoFocus
+              editable={!busy}
+              testID="phone-verify-input"
+            />
+          </View>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <View style={styles.submitContainer}>
+            <Button
+              fullWidth
+              onPress={handleVerify}
+              disabled={busy}
+              testID="phone-verify-submit-button"
+            >
+              {t("phoneAuth.verify")}
+            </Button>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleResend}
+            disabled={resendIn > 0 || busy}
+            style={styles.resendRow}
+            activeOpacity={0.7}
+            testID="phone-verify-resend-button"
+          >
+            <Text
+              style={[styles.resendText, resendIn > 0 && styles.resendDisabled]}
+            >
+              {resendIn > 0
+                ? t("phoneAuth.resendWithCountdown", { seconds: resendIn })
+                : t("phoneAuth.resend")}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.replace("/phone-login")}
+            style={styles.changeRow}
+            activeOpacity={0.7}
+            disabled={busy}
+            testID="phone-verify-change-number-button"
+          >
+            <Text style={styles.changeText}>{t("phoneAuth.changeNumber")}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#050404",
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  title: {
+    fontFamily: "Poppins_700Bold",
+    fontSize: 24,
+    color: "#EAEAEA",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 14,
+    color: "rgba(234, 234, 234, 0.6)",
+    lineHeight: 20,
+    marginBottom: 28,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 48,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: "#2E1C2B",
+    borderWidth: 1,
+    borderColor: "rgba(234, 234, 234, 0.08)",
+    gap: 10,
+  },
+  input: {
+    flex: 1,
+    fontFamily: "Poppins_400Regular",
+    fontSize: 18,
+    letterSpacing: 6,
+    color: "#EAEAEA",
+    height: 48,
+  },
+  error: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 13,
+    color: "#FF6B6B",
+    textAlign: "center",
+    paddingTop: 12,
+  },
+  submitContainer: {
+    paddingTop: 24,
+  },
+  resendRow: {
+    alignItems: "center",
+    paddingTop: 20,
+  },
+  resendText: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 13,
+    color: "#EAEAEA",
+  },
+  resendDisabled: {
+    color: "rgba(234, 234, 234, 0.5)",
+  },
+  changeRow: {
+    alignItems: "center",
+    paddingTop: 14,
+  },
+  changeText: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 13,
+    color: "rgba(234, 234, 234, 0.6)",
+  },
+});
