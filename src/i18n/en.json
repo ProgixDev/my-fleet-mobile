@@ -75,7 +75,28 @@
     "hasAccount": "Already have an account? ",
     "noAccount": "Don't have an account yet? ",
     "switchToLogin": "Sign in",
-    "switchToSignup": "Sign up"
+    "switchToSignup": "Sign up",
+    "continueWithPhone": "Continue with phone"
+  },
+  "phoneAuth": {
+    "phoneTitle": "Sign in with your phone",
+    "phoneSubtitle": "Enter your phone number with the country code. We'll text you a verification code.",
+    "phonePlaceholder": "+1 514 400 7891",
+    "phoneHint": "Include the country code, e.g. +1 for Canada/US.",
+    "sendCode": "Send code",
+    "codeTitle": "Enter the code",
+    "codeSubtitle": "We sent a 6-digit code to {{phone}}.",
+    "codePlaceholder": "123456",
+    "verify": "Verify",
+    "resend": "Resend code",
+    "resendWithCountdown": "Resend code ({{seconds}}s)",
+    "changeNumber": "Change number",
+    "errors": {
+      "invalidPhone": "Enter a valid phone number in international format (e.g. +15144007891).",
+      "invalidCode": "Enter the 6-digit code you received.",
+      "sendFailed": "Could not send the code. Please try again.",
+      "verifyFailed": "Invalid or expired code. Please try again."
+    }
   },
   "otp": {
     "title": "Verify your number",
