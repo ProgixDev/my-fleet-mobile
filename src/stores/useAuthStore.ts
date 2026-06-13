@@ -6,11 +6,13 @@ import { supabase } from "@/lib/supabase";
 import {
   logout as supabaseSignOut,
   requestEmailOtp,
+  requestEmailSignupOtp,
   requestPhoneOtp,
   signInWithEmail,
   signUpClient,
   validateSession,
   verifyEmailOtp,
+  verifyEmailSignupOtp,
   verifyPhoneOtp,
   type AuthUser,
 } from "@/services/authService";
@@ -38,6 +40,8 @@ interface AuthActions {
   loginWithOtp: (email: string, token: string) => Promise<void>;
   requestPhoneOtp: (phone: string) => Promise<void>;
   loginWithPhoneOtp: (phone: string, token: string) => Promise<void>;
+  requestEmailSignupOtp: (email: string) => Promise<void>;
+  verifyEmailSignupOtp: (email: string, token: string) => Promise<void>;
   signup: (input: {
     name: string;
     email: string;
@@ -152,6 +156,30 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
         try {
           const session = await verifyPhoneOtp(phone.trim(), token.trim());
+          const user = await validateSession(session.accessToken);
+          if (user.role !== "client") {
+            await supabaseSignOut();
+            set({ isLoading: false });
+            throw new WrongAppError();
+          }
+          set({ user, isAuthenticated: true, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      requestEmailSignupOtp: async (email) => {
+        await requestEmailSignupOtp(email.trim().toLowerCase());
+      },
+
+      verifyEmailSignupOtp: async (email, token) => {
+        set({ isLoading: true });
+        try {
+          const session = await verifyEmailSignupOtp(
+            email.trim().toLowerCase(),
+            token.trim(),
+          );
           const user = await validateSession(session.accessToken);
           if (user.role !== "client") {
             await supabaseSignOut();

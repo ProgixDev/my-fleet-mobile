@@ -93,7 +93,25 @@
     "changeNumber": "Modifier le numéro",
     "errors": {
       "invalidPhone": "Saisissez un numéro valide au format international (par ex. +15144007891).",
-      "invalidCode": "Saisissez le code à 6 chiffres reçu.",
+      "invalidCode": "Ce code est incorrect. Vérifiez les 6 chiffres et réessayez.",
+      "expiredCode": "Ce code a expiré. Touchez « Renvoyer le code » pour en recevoir un nouveau.",
+      "rateLimited": "Trop de tentatives. Veuillez patienter un instant avant de réessayer.",
+      "sendFailed": "Impossible d'envoyer le code. Veuillez réessayer.",
+      "verifyFailed": "Code invalide ou expiré. Veuillez réessayer."
+    }
+  },
+  "emailAuth": {
+    "codeTitle": "Vérifiez votre e-mail",
+    "codeSubtitle": "Nous avons envoyé un code à 6 chiffres à {{email}}. Saisissez-le ci-dessous pour confirmer votre compte.",
+    "codePlaceholder": "123456",
+    "verify": "Vérifier",
+    "resend": "Renvoyer le code",
+    "resendWithCountdown": "Renvoyer le code ({{seconds}}s)",
+    "changeEmail": "Utiliser une autre adresse e-mail",
+    "errors": {
+      "invalidCode": "Ce code est incorrect. Vérifiez les 6 chiffres et réessayez.",
+      "expiredCode": "Ce code a expiré. Touchez « Renvoyer le code » pour en recevoir un nouveau.",
+      "rateLimited": "Trop de tentatives. Veuillez patienter un instant avant de réessayer.",
       "sendFailed": "Impossible d'envoyer le code. Veuillez réessayer.",
       "verifyFailed": "Code invalide ou expiré. Veuillez réessayer."
     }

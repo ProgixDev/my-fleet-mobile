@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, MessageSquare } from "lucide-react-native";
+import { ArrowLeft, Mail } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
@@ -20,12 +20,12 @@ import { classifyOtpError } from "@/lib/otpErrors";
 
 const RESEND_COUNTDOWN = 30;
 
-export default function PhoneVerifyScreen() {
+export default function EmailVerifyScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const params = useLocalSearchParams<{ phone?: string }>();
-  const phone = typeof params.phone === "string" ? params.phone : "";
+  const params = useLocalSearchParams<{ email?: string }>();
+  const email = typeof params.email === "string" ? params.email : "";
 
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,15 +34,15 @@ export default function PhoneVerifyScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isLoading = useAuthStore((s) => s.isLoading);
-  const loginWithPhoneOtp = useAuthStore((s) => s.loginWithPhoneOtp);
-  const requestPhoneOtp = useAuthStore((s) => s.requestPhoneOtp);
+  const verifyEmailSignupOtp = useAuthStore((s) => s.verifyEmailSignupOtp);
+  const requestEmailSignupOtp = useAuthStore((s) => s.requestEmailSignupOtp);
 
-  // Missing phone param means this screen was opened out of flow; bounce back.
+  // Missing email param means this screen was opened out of flow; bounce back.
   useEffect(() => {
-    if (!phone) {
-      router.replace("/phone-login");
+    if (!email) {
+      router.replace("/auth");
     }
-  }, [phone, router]);
+  }, [email, router]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -59,15 +59,15 @@ export default function PhoneVerifyScreen() {
   const handleVerify = async () => {
     setError(null);
     if (!isComplete) {
-      setError(t("phoneAuth.errors.invalidCode"));
+      setError(t("emailAuth.errors.invalidCode"));
       return;
     }
     setSubmitting(true);
     try {
-      await loginWithPhoneOtp(phone, token);
+      await verifyEmailSignupOtp(email, token);
       router.replace("/home");
     } catch (e) {
-      setError(classifyOtpError(e, t, "phoneAuth"));
+      setError(classifyOtpError(e, t));
     } finally {
       setSubmitting(false);
     }
@@ -77,10 +77,10 @@ export default function PhoneVerifyScreen() {
     if (resendIn > 0) return;
     setError(null);
     try {
-      await requestPhoneOtp(phone);
+      await requestEmailSignupOtp(email);
       setResendIn(RESEND_COUNTDOWN);
     } catch (e) {
-      setError(classifyOtpError(e, t, "phoneAuth"));
+      setError(classifyOtpError(e, t));
     }
   };
 
@@ -106,22 +106,22 @@ export default function PhoneVerifyScreen() {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.7}
             disabled={busy}
-            testID="phone-verify-back-button"
+            testID="email-verify-back-button"
           >
             <ArrowLeft size={22} color={colors.text} strokeWidth={1.5} />
           </TouchableOpacity>
 
           <Text style={[styles.title, { color: colors.text }]}>
-            {t("phoneAuth.codeTitle")}
+            {t("emailAuth.codeTitle")}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {t("phoneAuth.codeSubtitle", { phone })}
+            {t("emailAuth.codeSubtitle", { email })}
           </Text>
 
           <View style={styles.inputRow}>
-            <MessageSquare size={20} color={iconColor} strokeWidth={1.5} />
+            <Mail size={20} color={iconColor} strokeWidth={1.5} />
             <TextInput
-              placeholder={t("phoneAuth.codePlaceholder")}
+              placeholder={t("emailAuth.codePlaceholder")}
               placeholderTextColor="rgba(234, 234, 234, 0.4)"
               value={code}
               onChangeText={(text) => setCode(text.replace(/\D/g, ""))}
@@ -130,7 +130,7 @@ export default function PhoneVerifyScreen() {
               maxLength={6}
               autoFocus
               editable={!busy}
-              testID="phone-verify-input"
+              testID="email-verify-input"
             />
           </View>
 
@@ -141,9 +141,9 @@ export default function PhoneVerifyScreen() {
               fullWidth
               onPress={handleVerify}
               disabled={busy || !isComplete}
-              testID="phone-verify-submit-button"
+              testID="email-verify-submit-button"
             >
-              {t("phoneAuth.verify")}
+              {t("emailAuth.verify")}
             </Button>
           </View>
 
@@ -152,25 +152,25 @@ export default function PhoneVerifyScreen() {
             disabled={resendIn > 0 || busy}
             style={styles.resendRow}
             activeOpacity={0.7}
-            testID="phone-verify-resend-button"
+            testID="email-verify-resend-button"
           >
             <Text
               style={[styles.resendText, resendIn > 0 && styles.resendDisabled]}
             >
               {resendIn > 0
-                ? t("phoneAuth.resendWithCountdown", { seconds: resendIn })
-                : t("phoneAuth.resend")}
+                ? t("emailAuth.resendWithCountdown", { seconds: resendIn })
+                : t("emailAuth.resend")}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.replace("/phone-login")}
+            onPress={() => router.replace("/auth")}
             style={styles.changeRow}
             activeOpacity={0.7}
             disabled={busy}
-            testID="phone-verify-change-number-button"
+            testID="email-verify-change-email-button"
           >
-            <Text style={styles.changeText}>{t("phoneAuth.changeNumber")}</Text>
+            <Text style={styles.changeText}>{t("emailAuth.changeEmail")}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
