@@ -93,6 +93,34 @@ export async function verifyEmailOtp(
   };
 }
 
+// Email signup confirmation OTP. After `POST /auth/signup/client` Supabase
+// sends a 6-digit confirmation code to the address; these two helpers verify
+// it and resend it. They are distinct from the passwordless login helpers
+// above: confirmation uses `type: 'signup'` (and `resend({ type: 'signup' })`),
+// whereas the login path uses `type: 'email'` with `signInWithOtp`.
+export async function requestEmailSignupOtp(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) throw new Error(error.message);
+}
+
+export async function verifyEmailSignupOtp(
+  email: string,
+  token: string,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "signup",
+  });
+  if (error || !data.session) {
+    throw new Error(error?.message ?? "Invalid or expired code");
+  }
+  return {
+    accessToken: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+  };
+}
+
 // Passwordless phone-OTP login via Supabase native phone auth. Prelude is
 // wired as Supabase's SMS provider on the backend; from the app's side this is
 // a plain Supabase call. Unlike the email path we DO let Supabase create the

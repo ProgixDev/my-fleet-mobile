@@ -17,7 +17,11 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { forgotPassword as forgotPasswordRequest } from "@/services/authService";
+import {
+  EmailNotConfirmedError,
+  forgotPassword as forgotPasswordRequest,
+} from "@/services/authService";
+import { ApiClientError } from "@/services/api";
 import {
   flattenZodErrors,
   loginFormSchema,
@@ -86,7 +90,27 @@ export default function AuthScreen() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const login = useAuthStore((s) => s.login);
   const signup = useAuthStore((s) => s.signup);
+  const requestEmailSignupOtp = useAuthStore((s) => s.requestEmailSignupOtp);
   const [isForgotLoading, setIsForgotLoading] = useState(false);
+
+  // Routes the user to the email confirmation screen and (best-effort) resends
+  // a fresh code. Used both right after signup and when login reports the
+  // account's email is not yet confirmed (backend code EMAIL_NOT_CONFIRMED /
+  // Supabase "Email not confirmed").
+  const goToEmailVerify = async (
+    targetEmail: string,
+    opts?: { resend?: boolean },
+  ) => {
+    const normalized = targetEmail.trim().toLowerCase();
+    if (opts?.resend) {
+      try {
+        await requestEmailSignupOtp(normalized);
+      } catch {
+        // Non-fatal: the verify screen also offers a resend button.
+      }
+    }
+    router.push({ pathname: "/email-verify", params: { email: normalized } });
+  };
 
   const handleForgotPassword = async () => {
     setSubmitError(null);
@@ -147,10 +171,9 @@ export default function AuthScreen() {
           phone: "",
           password: "",
         });
-        switchTab("login", { keepSuccess: true });
-        setSuccessMessage(
-          "Account created. Check your email to verify, then sign in.",
-        );
+        // Supabase has emailed a 6-digit confirmation code as part of signup;
+        // send the user straight to the verify screen (no resend needed).
+        await goToEmailVerify(parsed.data.email);
       } catch (e) {
         setSubmitError(e instanceof Error ? e.message : "Signup failed");
       }
@@ -170,6 +193,20 @@ export default function AuthScreen() {
       await login(parsed.data.email, parsed.data.password);
       router.replace("/home");
     } catch (e) {
+      // The account exists but its email isn't confirmed yet. The backend
+      // login envelope carries the code EMAIL_NOT_CONFIRMED (HTTP 403); the
+      // client's current Supabase-direct login surfaces it as
+      // EmailNotConfirmedError. In both cases, route to the verify screen and
+      // resend a fresh code instead of showing a dead-end error.
+      const isEmailNotConfirmed =
+        e instanceof EmailNotConfirmedError ||
+        (e instanceof ApiClientError && e.code === "EMAIL_NOT_CONFIRMED");
+      if (isEmailNotConfirmed) {
+        const targetEmail =
+          e instanceof EmailNotConfirmedError ? e.email : parsed.data.email;
+        await goToEmailVerify(targetEmail, { resend: true });
+        return;
+      }
       console.error(e);
       setSubmitError(e instanceof Error ? e.message : "Login failed");
     }
