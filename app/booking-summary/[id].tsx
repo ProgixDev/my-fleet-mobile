@@ -105,6 +105,8 @@ export default function BookingSummaryScreen() {
             {t("bookingSummary.notFound")}
           </Text>
           <TouchableOpacity
+            testID="booking-summary-not-found-back-button"
+            accessibilityRole="button"
             onPress={goBack}
             style={[styles.backPill, { backgroundColor: colors.primary }]}
           >
@@ -157,6 +159,9 @@ export default function BookingSummaryScreen() {
           style={styles.headerRow}
         >
           <TouchableOpacity
+            testID="booking-summary-back-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("bookingSummary.back")}
             onPress={goBack}
             style={[
               styles.iconButton,
@@ -390,6 +395,9 @@ export default function BookingSummaryScreen() {
           style={styles.invoiceSection}
         >
           <TouchableOpacity
+            testID={`booking-summary-invoice-button-${booking.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={t("bookingSummary.invoice.title")}
             activeOpacity={0.88}
             onPress={() => router.push(`/confirmation/${booking.id}` as never)}
             style={[

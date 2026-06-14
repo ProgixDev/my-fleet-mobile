@@ -10,14 +10,15 @@ const APP_BUILD = "100";
 
 interface Link {
   icon: LucideIcon;
+  testId: string;
   labelKey: string;
   url: string;
 }
 
 const links: Link[] = [
-  { icon: Globe, labelKey: "about.website", url: "https://myfleet.app" },
-  { icon: Send, labelKey: "about.twitter", url: "https://twitter.com/myfleet" },
-  { icon: Briefcase, labelKey: "about.linkedin", url: "https://linkedin.com/company/myfleet" },
+  { icon: Globe, testId: "about-link-website", labelKey: "about.website", url: "https://myfleet.app" },
+  { icon: Send, testId: "about-link-twitter", labelKey: "about.twitter", url: "https://twitter.com/myfleet" },
+  { icon: Briefcase, testId: "about-link-linkedin", labelKey: "about.linkedin", url: "https://linkedin.com/company/myfleet" },
 ];
 
 export default function AboutScreen() {
@@ -77,6 +78,9 @@ export default function AboutScreen() {
           return (
             <Pressable
               key={link.labelKey}
+              testID={link.testId}
+              accessibilityRole="button"
+              accessibilityLabel={t(link.labelKey)}
               onPress={() => Linking.openURL(link.url)}
               style={[
                 styles.row,

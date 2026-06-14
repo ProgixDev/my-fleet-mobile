@@ -78,6 +78,9 @@ export default function NotificationsScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity
+            testID="notifications-back-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("common.back", { defaultValue: "Retour" })}
             onPress={goBack}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -87,6 +90,9 @@ export default function NotificationsScreen() {
           <Text style={styles.title}>{t("notifications.title")}</Text>
           {notifications.some((n) => !n.read) ? (
             <TouchableOpacity
+              testID="notifications-mark-all-read-button"
+              accessibilityRole="button"
+              accessibilityLabel={t("notifications.markAllRead", { defaultValue: "Tout lire" })}
               onPress={() => markAllRead.mutate()}
               hitSlop={10}
               style={{ marginLeft: "auto" }}
@@ -108,7 +114,11 @@ export default function NotificationsScreen() {
             <Text style={{ color: "rgba(234, 234, 234, 0.6)" }}>
               {t("notifications.loadError", { defaultValue: "Impossible de charger les notifications." })}
             </Text>
-            <TouchableOpacity onPress={() => refetch()}>
+            <TouchableOpacity
+              testID="notifications-retry-button"
+              accessibilityRole="button"
+              onPress={() => refetch()}
+            >
               <Text style={{ color: "#EAEAEA", fontWeight: "600" }}>
                 {t("common.retry", { defaultValue: "Réessayer" })}
               </Text>
@@ -131,6 +141,9 @@ export default function NotificationsScreen() {
               return (
                 <TouchableOpacity
                   key={notif.id}
+                  testID={`notifications-item-${notif.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={notif.title}
                   style={[
                     styles.notifRow,
                     { backgroundColor: notif.read ? "#050404" : "#2E1C2B" },

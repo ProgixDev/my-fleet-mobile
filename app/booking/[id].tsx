@@ -286,6 +286,9 @@ export default function BookingScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
+              testID="booking-back-button"
+              accessibilityRole="button"
+              accessibilityLabel={t("booking.title")}
               onPress={goBack}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -311,6 +314,8 @@ export default function BookingScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t("booking.datesTitle")}</Text>
           <TouchableOpacity
+            testID="booking-date-card"
+            accessibilityRole="button"
             style={styles.dateCard}
             activeOpacity={0.85}
             onPress={openDateModal}
@@ -326,6 +331,9 @@ export default function BookingScreen() {
           <View style={{ width: HALF_WIDTH }}>
             <Text style={styles.timeLabel}>{t("booking.timePickupLabel")}</Text>
             <TouchableOpacity
+              testID="booking-pickup-time-button"
+              accessibilityRole="button"
+              accessibilityLabel={t("booking.timePickupLabel")}
               style={styles.timeBox}
               activeOpacity={0.85}
               onPress={() => setShowPickupTimeModal(true)}
@@ -337,6 +345,9 @@ export default function BookingScreen() {
           <View style={{ width: HALF_WIDTH }}>
             <Text style={styles.timeLabel}>{t("booking.timeReturnLabel")}</Text>
             <TouchableOpacity
+              testID="booking-return-time-button"
+              accessibilityRole="button"
+              accessibilityLabel={t("booking.timeReturnLabel")}
               style={styles.timeBox}
               activeOpacity={0.85}
               onPress={() => setShowReturnTimeModal(true)}
@@ -352,6 +363,8 @@ export default function BookingScreen() {
           <Text style={styles.sectionTitle}>{t("booking.pickupTitle")}</Text>
           <View style={styles.pickupRow}>
             <TouchableOpacity
+              testID="booking-pickup-agency-button"
+              accessibilityRole="button"
               onPress={() => setPickupMethod("agency")}
               activeOpacity={0.85}
               style={[
@@ -372,6 +385,8 @@ export default function BookingScreen() {
             </TouchableOpacity>
             {deliveryEnabled && deliveryConfig && (
               <TouchableOpacity
+                testID="booking-pickup-delivery-button"
+                accessibilityRole="button"
                 onPress={() => setPickupMethod("delivery")}
                 activeOpacity={0.85}
                 style={[
@@ -499,6 +514,10 @@ export default function BookingScreen() {
             </Text>
           </View>
           <TouchableOpacity
+            testID="booking-chauffeur-toggle"
+            accessibilityRole="switch"
+            accessibilityState={{ checked: withChauffeur }}
+            accessibilityLabel={t("booking.chauffeur.title")}
             onPress={() => setWithChauffeur(!withChauffeur)}
             activeOpacity={0.7}
             style={[
@@ -614,7 +633,13 @@ export default function BookingScreen() {
               <Text style={styles.modalTitle}>
                 {t("booking.calendarModalTitle")}
               </Text>
-              <TouchableOpacity onPress={() => setShowDateModal(false)} activeOpacity={0.7}>
+              <TouchableOpacity
+                testID="booking-date-modal-close-button"
+                accessibilityRole="button"
+                accessibilityLabel="Fermer"
+                onPress={() => setShowDateModal(false)}
+                activeOpacity={0.7}
+              >
                 <X size={24} color={colors.text} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
@@ -649,13 +674,27 @@ export default function BookingScreen() {
             </View>
 
             <View style={styles.calMonthNav}>
-              <TouchableOpacity onPress={prevMonth} activeOpacity={0.7} style={styles.calNavBtn}>
+              <TouchableOpacity
+                testID="booking-calendar-prev-month-button"
+                accessibilityRole="button"
+                accessibilityLabel="Mois précédent"
+                onPress={prevMonth}
+                activeOpacity={0.7}
+                style={styles.calNavBtn}
+              >
                 <ChevronLeft size={20} color={colors.text} strokeWidth={1.5} />
               </TouchableOpacity>
               <Text style={styles.calMonthLabel}>
                 {monthNames[calMonth]} {calYear}
               </Text>
-              <TouchableOpacity onPress={nextMonth} activeOpacity={0.7} style={styles.calNavBtn}>
+              <TouchableOpacity
+                testID="booking-calendar-next-month-button"
+                accessibilityRole="button"
+                accessibilityLabel="Mois suivant"
+                onPress={nextMonth}
+                activeOpacity={0.7}
+                style={styles.calNavBtn}
+              >
                 <ChevronRight size={20} color={colors.text} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
@@ -679,6 +718,8 @@ export default function BookingScreen() {
                 return (
                   <TouchableOpacity
                     key={`d-${day}`}
+                    testID={`booking-calendar-day-${day}`}
+                    accessibilityRole="button"
                     style={[
                       styles.calCell,
                       isInRange && styles.calCellRange,
@@ -701,6 +742,8 @@ export default function BookingScreen() {
 
             <View style={styles.calFooter}>
               <TouchableOpacity
+                testID="booking-calendar-confirm-button"
+                accessibilityRole="button"
                 onPress={confirmDates}
                 style={styles.primaryCta}
                 activeOpacity={0.9}
@@ -714,8 +757,8 @@ export default function BookingScreen() {
 
       {/* ═══ Time Picker Modals ═══ */}
       {[
-        { visible: showPickupTimeModal, setVisible: setShowPickupTimeModal, title: t("booking.timePickupLabel"), selected: pickupTime, onSelect: setPickupTime },
-        { visible: showReturnTimeModal, setVisible: setShowReturnTimeModal, title: t("booking.timeReturnLabel"), selected: returnTime, onSelect: setReturnTime },
+        { idPrefix: "booking-pickup-time", visible: showPickupTimeModal, setVisible: setShowPickupTimeModal, title: t("booking.timePickupLabel"), selected: pickupTime, onSelect: setPickupTime },
+        { idPrefix: "booking-return-time", visible: showReturnTimeModal, setVisible: setShowReturnTimeModal, title: t("booking.timeReturnLabel"), selected: returnTime, onSelect: setReturnTime },
       ].map((modal) => (
         <Modal key={modal.title} visible={modal.visible} transparent animationType="slide">
           <Pressable style={styles.modalOverlay} onPress={() => modal.setVisible(false)}>
@@ -723,7 +766,13 @@ export default function BookingScreen() {
               <View style={styles.modalDragHandle} />
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{modal.title}</Text>
-                <TouchableOpacity onPress={() => modal.setVisible(false)} activeOpacity={0.7}>
+                <TouchableOpacity
+                  testID={`${modal.idPrefix}-modal-close-button`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fermer"
+                  onPress={() => modal.setVisible(false)}
+                  activeOpacity={0.7}
+                >
                   <X size={24} color={colors.text} strokeWidth={1.5} />
                 </TouchableOpacity>
               </View>
@@ -733,6 +782,8 @@ export default function BookingScreen() {
                   return (
                     <TouchableOpacity
                       key={hour}
+                      testID={`${modal.idPrefix}-chip-${hour}`}
+                      accessibilityRole="button"
                       style={[styles.timeChip, isSelected && styles.timeChipSelected]}
                       activeOpacity={0.7}
                       onPress={() => { modal.onSelect(hour); modal.setVisible(false); }}

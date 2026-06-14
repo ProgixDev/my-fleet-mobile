@@ -103,6 +103,9 @@ export default function BookingsScreen() {
             return (
               <TouchableOpacity
                 key={tab.key}
+                testID={`bookings-tab-${tab.key}`}
+                accessibilityRole="button"
+                accessibilityLabel={t(tab.labelKey)}
                 onPress={() => setActiveTab(tab.key)}
                 style={[
                   styles.tab,
@@ -133,7 +136,11 @@ export default function BookingsScreen() {
             <Text style={{ color: colors.textSecondary }}>
               {t("bookings.loadError", { defaultValue: "Impossible de charger vos réservations." })}
             </Text>
-            <TouchableOpacity onPress={() => refetch()}>
+            <TouchableOpacity
+              testID="bookings-retry-button"
+              accessibilityRole="button"
+              onPress={() => refetch()}
+            >
               <Text style={{ color: colors.primary, fontWeight: "600" }}>
                 {t("common.retry", { defaultValue: "Réessayer" })}
               </Text>
@@ -158,6 +165,8 @@ export default function BookingsScreen() {
               return (
                 <TouchableOpacity
                   key={booking.id}
+                  testID={`bookings-card-${booking.id}`}
+                  accessibilityRole="button"
                   activeOpacity={0.95}
                   style={[
                     styles.card,

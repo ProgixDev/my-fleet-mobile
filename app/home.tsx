@@ -107,6 +107,9 @@ export default function HomeScreen() {
 
           <SafeAreaView style={styles.heroNav} edges={["top"]}>
             <TouchableOpacity
+              testID="home-scan-button"
+              accessibilityRole="button"
+              accessibilityLabel="Scan"
               onPress={() => router.push("/scan")}
               style={styles.heroButton}
               activeOpacity={0.7}
@@ -114,6 +117,9 @@ export default function HomeScreen() {
               <ScanLine size={20} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
             <TouchableOpacity
+              testID="home-share-button"
+              accessibilityRole="button"
+              accessibilityLabel="Share"
               style={styles.heroButton}
               activeOpacity={0.7}
               onPress={() => {
@@ -246,6 +252,8 @@ export default function HomeScreen() {
             ]}
           >
             <TouchableOpacity
+              testID="home-tab-vehicles"
+              accessibilityRole="button"
               onPress={() => setActiveTab("vehicles")}
               style={[
                 styles.tab,
@@ -268,6 +276,8 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              testID="home-tab-reviews"
+              accessibilityRole="button"
               onPress={() => setActiveTab("reviews")}
               style={[
                 styles.tab,
@@ -305,6 +315,8 @@ export default function HomeScreen() {
                 {agencyVehicles.map((vehicle) => (
                   <TouchableOpacity
                     key={vehicle.id}
+                    testID={`home-vehicle-card-${vehicle.id}`}
+                    accessibilityRole="button"
                     activeOpacity={0.9}
                     style={[
                       styles.vehicleMiniCard,

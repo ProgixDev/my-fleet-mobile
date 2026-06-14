@@ -59,7 +59,11 @@ export default function PaymentMethodsScreen() {
                 defaultValue: "Impossible de charger vos cartes.",
               })}
             </Text>
-            <Pressable onPress={() => refetch()}>
+            <Pressable
+              testID="payment-methods-retry-button"
+              accessibilityRole="button"
+              onPress={() => refetch()}
+            >
               <Text style={{ color: colors.primary, fontWeight: "600" }}>
                 {t("common.retry", { defaultValue: "Réessayer" })}
               </Text>
@@ -114,6 +118,9 @@ export default function PaymentMethodsScreen() {
               </LinearGradient>
 
               <Pressable
+                testID={`payment-methods-remove-button-${card.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={t("paymentMethods.remove")}
                 onPress={() => handleDelete(card.id, card.last4)}
                 disabled={deleteCard.isPending}
                 style={[

@@ -132,7 +132,7 @@ function CityAutocompleteModal({
           <View style={cityStyles.dragHandle} />
           <View style={cityStyles.header}>
             <Text style={cityStyles.title}>{t("search.cityModalTitle")}</Text>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+            <TouchableOpacity testID="search-city-modal-close" accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} activeOpacity={0.7}>
               <X size={24} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
@@ -150,7 +150,7 @@ function CityAutocompleteModal({
               returnKeyType="search"
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery("")} activeOpacity={0.7}>
+              <TouchableOpacity testID="search-city-query-clear" accessibilityRole="button" accessibilityLabel="Clear" onPress={() => setQuery("")} activeOpacity={0.7}>
                 <X size={16} color="rgba(234, 234, 234, 0.4)" strokeWidth={1.5} />
               </TouchableOpacity>
             )}
@@ -165,6 +165,8 @@ function CityAutocompleteModal({
                   return (
                     <TouchableOpacity
                       key={city.name}
+                      testID={`search-city-option-${city.name}`}
+                      accessibilityRole="button"
                       style={[cityStyles.row, isSel && cityStyles.rowSelected]}
                       activeOpacity={0.7}
                       onPress={() => onSelect(city.name)}
@@ -396,28 +398,28 @@ export default function SearchScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* ─── Header ─── */}
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={goBack} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity testID="search-back-button" accessibilityRole="button" accessibilityLabel="Back" onPress={goBack} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <ArrowLeft size={24} color="#EAEAEA" strokeWidth={1.5} />
           </TouchableOpacity>
           <View style={styles.searchInputWrapper}>
             <SearchIcon size={20} color="rgba(234, 234, 234, 0.6)" strokeWidth={1.5} />
             <TextInput ref={inputRef} value={categoryFilter ? "" : searchQuery} onChangeText={(text) => { setSearchQuery(text); setCategoryFilter(null); }} placeholder={categoryFilter ? t("search.categoryInputPlaceholder", { category: categoryFilter }) : t("search.inputPlaceholder")} placeholderTextColor="rgba(234, 234, 234, 0.4)" style={styles.searchInput} returnKeyType="search" />
-            {isSearching && <TouchableOpacity onPress={() => { setSearchQuery(""); setCategoryFilter(null); }} activeOpacity={0.7}><X size={18} color="rgba(234, 234, 234, 0.5)" strokeWidth={1.5} /></TouchableOpacity>}
+            {isSearching && <TouchableOpacity testID="search-query-clear" accessibilityRole="button" accessibilityLabel="Clear" onPress={() => { setSearchQuery(""); setCategoryFilter(null); }} activeOpacity={0.7}><X size={18} color="rgba(234, 234, 234, 0.5)" strokeWidth={1.5} /></TouchableOpacity>}
           </View>
         </View>
 
         {/* ─── Date & Time Filter Bar ─── */}
         {/* ─── Filter Bar ─── */}
-        <TouchableOpacity style={[styles.locationBtn, styles.filterBtnActive]} activeOpacity={0.85} onPress={() => setShowCityModal(true)}>
+        <TouchableOpacity testID="search-location-button" accessibilityRole="button" style={[styles.locationBtn, styles.filterBtnActive]} activeOpacity={0.85} onPress={() => setShowCityModal(true)}>
           <MapPin size={16} color="#EAEAEA" strokeWidth={1.5} />
           <Text style={styles.filterBtnTextActive}>{t("search.locationLabel", { city: selectedCity })}</Text>
         </TouchableOpacity>
         <View style={styles.filterBar}>
-          <TouchableOpacity style={[styles.filterBtn, datesSelected && styles.filterBtnActive]} activeOpacity={0.85} onPress={openDateModal}>
+          <TouchableOpacity testID="search-dates-button" accessibilityRole="button" style={[styles.filterBtn, datesSelected && styles.filterBtnActive]} activeOpacity={0.85} onPress={openDateModal}>
             <Calendar size={16} color={datesSelected ? "#EAEAEA" : "rgba(234, 234, 234, 0.5)"} strokeWidth={1.5} />
             <Text style={[styles.filterBtnText, datesSelected && styles.filterBtnTextActive]} numberOfLines={1}>{dateLabel}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.filterBtn, datesSelected && styles.filterBtnActive]} activeOpacity={0.85} onPress={() => setShowTimeModal("pickup")}>
+          <TouchableOpacity testID="search-time-button" accessibilityRole="button" style={[styles.filterBtn, datesSelected && styles.filterBtnActive]} activeOpacity={0.85} onPress={() => setShowTimeModal("pickup")}>
             <Clock size={16} color={datesSelected ? "#EAEAEA" : "rgba(234, 234, 234, 0.5)"} strokeWidth={1.5} />
             <Text style={[styles.filterBtnText, datesSelected && styles.filterBtnTextActive]}>{timeLabel}</Text>
           </TouchableOpacity>
@@ -426,7 +428,7 @@ export default function SearchScreen() {
         {/* ─── Category Badge ─── */}
         {categoryFilter && (
           <View style={styles.activeBadgeRow}>
-            <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>{categoryFilter}</Text><TouchableOpacity onPress={() => setCategoryFilter(null)} activeOpacity={0.7}><X size={14} color="#EAEAEA" strokeWidth={2} /></TouchableOpacity></View>
+            <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>{categoryFilter}</Text><TouchableOpacity testID="search-category-clear" accessibilityRole="button" accessibilityLabel="Clear" onPress={() => setCategoryFilter(null)} activeOpacity={0.7}><X size={14} color="#EAEAEA" strokeWidth={2} /></TouchableOpacity></View>
             <Text style={styles.resultCount}>{t("search.resultsCount", { count: results.length })}</Text>
           </View>
         )}
@@ -439,6 +441,8 @@ export default function SearchScreen() {
                 {results.map((result) => (
                   <TouchableOpacity
                     key={`${result.type}-${result.id}`}
+                    testID={`search-result-${result.type}-${result.id}`}
+                    accessibilityRole="button"
                     style={[styles.resultCard, result.unavailable && styles.resultCardUnavailable]}
                     activeOpacity={result.unavailable ? 1 : 0.85}
                     onPress={() => !result.unavailable && (result.type === "vehicle" ? router.push(`/vehicle/${result.id}` as any) : router.push(`/agency/${result.id}` as any))}
@@ -486,8 +490,8 @@ export default function SearchScreen() {
                 <View style={styles.recentList}>
                   {searches.map((s) => (
                     <View key={s} style={styles.recentRow}>
-                      <TouchableOpacity style={styles.recentLeft} activeOpacity={0.7} onPress={() => { setSearchQuery(s); setCategoryFilter(null); }}><Clock size={18} color="rgba(234, 234, 234, 0.4)" strokeWidth={1.5} /><Text style={styles.recentText}>{s}</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => setSearches((p) => p.filter((x) => x !== s))} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}><X size={18} color="rgba(234, 234, 234, 0.4)" strokeWidth={1.5} /></TouchableOpacity>
+                      <TouchableOpacity testID={`search-recent-${s}`} accessibilityRole="button" style={styles.recentLeft} activeOpacity={0.7} onPress={() => { setSearchQuery(s); setCategoryFilter(null); }}><Clock size={18} color="rgba(234, 234, 234, 0.4)" strokeWidth={1.5} /><Text style={styles.recentText}>{s}</Text></TouchableOpacity>
+                      <TouchableOpacity testID={`search-recent-remove-${s}`} accessibilityRole="button" accessibilityLabel="Remove" onPress={() => setSearches((p) => p.filter((x) => x !== s))} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}><X size={18} color="rgba(234, 234, 234, 0.4)" strokeWidth={1.5} /></TouchableOpacity>
                     </View>
                   ))}
                 </View>
@@ -509,7 +513,7 @@ export default function SearchScreen() {
               <Text style={styles.sectionTitle}>{t("search.suggestionsTitle")}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScroll}>
                 {vehicles.slice(0, 4).map((v) => (
-                  <TouchableOpacity key={v.id} style={styles.suggestionCard} activeOpacity={0.85} onPress={() => router.push(`/vehicle/${v.id}` as any)}>
+                  <TouchableOpacity key={v.id} testID={`search-suggestion-${v.id}`} accessibilityRole="button" style={styles.suggestionCard} activeOpacity={0.85} onPress={() => router.push(`/vehicle/${v.id}` as any)}>
                     {v.thumbnailUrl ? (
                       <Image source={{ uri: v.thumbnailUrl }} style={styles.suggestionImage} />
                     ) : (
@@ -529,7 +533,7 @@ export default function SearchScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowDateModal(false)}>
           <Pressable style={styles.modalSheet} onPress={() => {}}>
             <View style={styles.modalDragHandle} />
-            <View style={styles.modalHeader}><Text style={styles.modalTitle}>{t("search.calendarModalTitle")}</Text><TouchableOpacity onPress={() => setShowDateModal(false)} activeOpacity={0.7}><X size={24} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity></View>
+            <View style={styles.modalHeader}><Text style={styles.modalTitle}>{t("search.calendarModalTitle")}</Text><TouchableOpacity testID="search-date-modal-close" accessibilityRole="button" accessibilityLabel="Close" onPress={() => setShowDateModal(false)} activeOpacity={0.7}><X size={24} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity></View>
             <View style={styles.calSummary}>
               <View style={styles.calSummaryItem}><Text style={styles.calSummaryLabel}>{t("search.calendarStart")}</Text><Text style={styles.calSummaryValue}>{formatDateShort(tempStart, shortMonths)}</Text></View>
               <View style={styles.calSummaryDivider} />
@@ -538,9 +542,9 @@ export default function SearchScreen() {
               <View style={styles.calSummaryItem}><Text style={styles.calSummaryLabel}>{t("search.calendarDuration")}</Text><Text style={styles.calSummaryValue}>{tempEnd > tempStart ? t("search.calendarDurationDays", { count: daysBetween(tempStart, tempEnd) }) : t("search.calendarEmpty")}</Text></View>
             </View>
             <View style={styles.calMonthNav}>
-              <TouchableOpacity onPress={prevMonth} activeOpacity={0.7} style={styles.calNavBtn}><ChevronLeft size={20} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity>
+              <TouchableOpacity testID="search-calendar-prev-month" accessibilityRole="button" accessibilityLabel="Previous month" onPress={prevMonth} activeOpacity={0.7} style={styles.calNavBtn}><ChevronLeft size={20} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity>
               <Text style={styles.calMonthLabel}>{monthNames[calMonth]} {calYear}</Text>
-              <TouchableOpacity onPress={nextMonth} activeOpacity={0.7} style={styles.calNavBtn}><ChevronRight size={20} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity>
+              <TouchableOpacity testID="search-calendar-next-month" accessibilityRole="button" accessibilityLabel="Next month" onPress={nextMonth} activeOpacity={0.7} style={styles.calNavBtn}><ChevronRight size={20} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity>
             </View>
             <View style={styles.calWeekRow}>{daysOfWeek.map((d) => <Text key={d} style={styles.calWeekDay}>{d}</Text>)}</View>
             <View style={styles.calGrid}>
@@ -553,14 +557,14 @@ export default function SearchScreen() {
                 const isEnd = tempEnd > tempStart && isSameDay(date, tempEnd);
                 const inRange = tempEnd > tempStart && isBetween(date, tempStart, tempEnd);
                 return (
-                  <TouchableOpacity key={`d-${day}`} style={[styles.calCell, inRange && styles.calCellRange, (isStart || isEnd) && styles.calCellSelected]} activeOpacity={isPast ? 1 : 0.7} onPress={() => !isPast && handleDayPress(day)}>
+                  <TouchableOpacity key={`d-${day}`} testID={`search-calendar-day-${day}`} accessibilityRole="button" style={[styles.calCell, inRange && styles.calCellRange, (isStart || isEnd) && styles.calCellSelected]} activeOpacity={isPast ? 1 : 0.7} onPress={() => !isPast && handleDayPress(day)}>
                     <Text style={[styles.calDayText, isPast && styles.calDayPast, (isStart || isEnd) && styles.calDaySelected, inRange && styles.calDayRange]}>{day}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
             <View style={styles.calFooter}>
-              <TouchableOpacity style={styles.confirmBtn} activeOpacity={0.85} onPress={confirmDates}><Text style={styles.confirmBtnText}>{t("search.confirmButton")}</Text></TouchableOpacity>
+              <TouchableOpacity testID="search-dates-confirm" accessibilityRole="button" style={styles.confirmBtn} activeOpacity={0.85} onPress={confirmDates}><Text style={styles.confirmBtnText}>{t("search.confirmButton")}</Text></TouchableOpacity>
             </View>
           </Pressable>
         </Pressable>
@@ -571,12 +575,12 @@ export default function SearchScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowTimeModal(null)}>
           <Pressable style={styles.modalSheet} onPress={() => {}}>
             <View style={styles.modalDragHandle} />
-            <View style={styles.modalHeader}><Text style={styles.modalTitle}>{showTimeModal === "pickup" ? t("search.timePickupTitle") : t("search.timeReturnTitle")}</Text><TouchableOpacity onPress={() => setShowTimeModal(null)} activeOpacity={0.7}><X size={24} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity></View>
+            <View style={styles.modalHeader}><Text style={styles.modalTitle}>{showTimeModal === "pickup" ? t("search.timePickupTitle") : t("search.timeReturnTitle")}</Text><TouchableOpacity testID="search-time-modal-close" accessibilityRole="button" accessibilityLabel="Close" onPress={() => setShowTimeModal(null)} activeOpacity={0.7}><X size={24} color="#EAEAEA" strokeWidth={1.5} /></TouchableOpacity></View>
             <View style={styles.timeGrid}>
               {HOURS.map((h) => {
                 const sel = showTimeModal === "pickup" ? pickupTime === h : returnTime === h;
                 return (
-                  <TouchableOpacity key={h} style={[styles.timeChip, sel && styles.timeChipSelected]} activeOpacity={0.7} onPress={() => {
+                  <TouchableOpacity key={h} testID={`search-time-chip-${h}`} accessibilityRole="button" style={[styles.timeChip, sel && styles.timeChipSelected]} activeOpacity={0.7} onPress={() => {
                     if (showTimeModal === "pickup") { setPickupTime(h); setShowTimeModal("return"); }
                     else { setReturnTime(h); setShowTimeModal(null); }
                   }}><Text style={[styles.timeChipText, sel && styles.timeChipTextSelected]}>{h}</Text></TouchableOpacity>

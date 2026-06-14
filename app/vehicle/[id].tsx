@@ -85,6 +85,8 @@ export default function VehicleDetailScreen() {
           {t("vehicle.errorLoading")}
         </Text>
         <TouchableOpacity
+          testID="vehicle-error-back-button"
+          accessibilityRole="button"
           onPress={goBack}
           style={[styles.backCta, { backgroundColor: colors.primary }]}
           activeOpacity={0.85}
@@ -175,6 +177,9 @@ export default function VehicleDetailScreen() {
 
           <SafeAreaView style={styles.heroNavRow} edges={["top"]}>
             <TouchableOpacity
+              testID="vehicle-back-button"
+              accessibilityRole="button"
+              accessibilityLabel={t("vehicle.goBack")}
               onPress={goBack}
               style={styles.heroBtn}
               activeOpacity={0.7}
@@ -184,6 +189,9 @@ export default function VehicleDetailScreen() {
 
             <View style={styles.heroRightBtns}>
               <TouchableOpacity
+                testID="vehicle-share-button"
+                accessibilityRole="button"
+                accessibilityLabel="Share"
                 style={styles.heroBtn}
                 activeOpacity={0.7}
                 onPress={() => {
@@ -195,6 +203,9 @@ export default function VehicleDetailScreen() {
                 <Share2 size={20} color="#FFFFFF" strokeWidth={1.8} />
               </TouchableOpacity>
               <TouchableOpacity
+                testID="vehicle-favorite-button"
+                accessibilityRole="button"
+                accessibilityLabel="Favorite"
                 style={styles.heroBtn}
                 activeOpacity={0.7}
                 onPress={() => setIsFavorite((v) => !v)}
@@ -407,6 +418,8 @@ export default function VehicleDetailScreen() {
           </Text>
         </View>
         <TouchableOpacity
+          testID="vehicle-book-button"
+          accessibilityRole="button"
           onPress={() => router.push(`/booking/${vehicle.id}` as any)}
           style={[styles.bookBtn, { backgroundColor: colors.primary }]}
           activeOpacity={0.9}

@@ -7,6 +7,7 @@ import { useTheme } from "@/context/ThemeContext";
 
 interface Channel {
   icon: LucideIcon;
+  testId: string;
   titleKey: string;
   valueKey: string;
   hintKey?: string;
@@ -23,6 +24,7 @@ export default function ContactScreen() {
   const channels: Channel[] = [
     {
       icon: Mail,
+      testId: "contact-channel-email",
       titleKey: "contact.emailTitle",
       valueKey: "contact.emailAddress",
       onPress: () => Linking.openURL(`mailto:${t("contact.emailAddress")}`),
@@ -30,6 +32,7 @@ export default function ContactScreen() {
     },
     {
       icon: Phone,
+      testId: "contact-channel-phone",
       titleKey: "contact.phoneTitle",
       valueKey: "contact.phoneNumber",
       hintKey: "contact.phoneHint",
@@ -50,6 +53,9 @@ export default function ContactScreen() {
           return (
             <Pressable
               key={channel.titleKey}
+              testID={channel.testId}
+              accessibilityRole="button"
+              accessibilityLabel={t(channel.titleKey)}
               onPress={channel.onPress}
               style={[
                 styles.row,
