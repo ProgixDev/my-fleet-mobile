@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { apiRequest, AUTH_BASE_URL } from "@/services/api";
+import { getAuthHeader } from "@/services/authHeader";
 
 export class EmailNotConfirmedError extends Error {
   constructor(public email: string) {
@@ -160,6 +161,21 @@ export async function validateSession(accessToken: string): Promise<AuthUser> {
 
 export async function logout(): Promise<void> {
   await supabase.auth.signOut();
+}
+
+// Permanent, in-app account deletion (App Store guideline 5.1.1(v)).
+// DELETE /auth/me soft-deletes + anonymizes the caller and revokes their
+// Supabase session server-side; the local session is cleared by the caller
+// (useAuthStore.logout). ADMIN-role accounts are rejected with HTTP 403 and a
+// support-contact message — that ApiClientError propagates to the caller so the
+// server message can be surfaced verbatim instead of as a generic failure.
+export async function deleteAccount(): Promise<void> {
+  const headers = await getAuthHeader();
+  await apiRequest<{ ok: boolean }>("/me", {
+    baseUrl: AUTH_BASE_URL,
+    method: "DELETE",
+    headers,
+  });
 }
 
 export async function forgotPassword(email: string): Promise<void> {

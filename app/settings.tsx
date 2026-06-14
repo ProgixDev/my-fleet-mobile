@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Modal,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,11 +26,15 @@ import {
   Info,
   ChevronRight,
   Check,
+  Trash2,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { BottomNav } from "@/components/BottomNav";
 import { useTheme } from "@/context/ThemeContext";
 import { setAppLocale, SUPPORTED_LOCALES, type AppLocale } from "@/i18n";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { deleteAccount } from "@/services/authService";
+import { ApiClientError } from "@/services/api";
 
 const APP_VERSION = "1.0.0";
 
@@ -49,6 +54,8 @@ export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [languageSheetOpen, setLanguageSheetOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const logout = useAuthStore((s) => s.logout);
 
   const currentLocale = (i18n.language?.slice(0, 2) ?? "fr") as AppLocale;
   const currentLanguageLabel = t(
@@ -58,6 +65,47 @@ export default function SettingsScreen() {
   const handlePickLocale = async (locale: AppLocale) => {
     setLanguageSheetOpen(false);
     await setAppLocale(locale);
+  };
+
+  // Permanent, in-app account deletion (App Store guideline 5.1.1(v)).
+  const runDeleteAccount = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      // Server already revoked the session; clear local auth state and send
+      // the user back to the unauthenticated entry (matches logout in profile).
+      await logout();
+      router.replace("/auth");
+    } catch (error) {
+      // Surface the server message verbatim — notably the 403 for ADMIN
+      // accounts ("Admin accounts cannot be deleted from the app…") — rather
+      // than a generic failure.
+      const message =
+        error instanceof ApiClientError
+          ? error.message
+          : t("settings.deleteAccountError");
+      Alert.alert(t("common.error"), message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      t("settings.deleteAccountConfirmTitle"),
+      t("settings.deleteAccountConfirmMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("settings.deleteAccountConfirmCta"),
+          style: "destructive",
+          onPress: () => {
+            void runDeleteAccount();
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -146,10 +194,21 @@ export default function SettingsScreen() {
             colors={colors}
             testID="settings-documents-row"
             onPress={() => router.push("/documents" as never)}
-            isLast
             trailing={
               <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
             }
+          />
+          <SettingRow
+            icon={Trash2}
+            label={t("settings.deleteAccount")}
+            colors={colors}
+            testID="settings-delete-account"
+            accessibilityLabel={t("settings.deleteAccount")}
+            accessibilityHint={t("settings.deleteAccountConfirmMessage")}
+            destructive
+            disabled={deleting}
+            onPress={handleDeleteAccount}
+            isLast
           />
         </View>
 
@@ -289,6 +348,10 @@ function SettingRow({
   isLast,
   colors,
   testID,
+  destructive,
+  disabled,
+  accessibilityLabel,
+  accessibilityHint,
 }: {
   icon: LucideIcon;
   label: string;
@@ -297,7 +360,13 @@ function SettingRow({
   isLast?: boolean;
   colors: ReturnType<typeof useTheme>["colors"];
   testID?: string;
+  destructive?: boolean;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }) {
+  const iconColor = destructive ? colors.error : colors.textSecondary;
+  const labelColor = destructive ? colors.error : colors.text;
   const content = (
     <View
       style={[
@@ -306,8 +375,8 @@ function SettingRow({
       ]}
     >
       <View style={styles.rowLeft}>
-        <Icon size={19} color={colors.textSecondary} strokeWidth={1.6} />
-        <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
+        <Icon size={19} color={iconColor} strokeWidth={1.6} />
+        <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
       </View>
       {trailing}
     </View>
@@ -317,7 +386,12 @@ function SettingRow({
       <Pressable
         testID={testID}
         accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled: !!disabled }}
+        disabled={disabled}
         onPress={onPress}
+        style={disabled ? { opacity: 0.5 } : undefined}
         android_ripple={{ color: "rgba(255,255,255,0.04)" }}
       >
         {content}
