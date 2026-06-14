@@ -460,6 +460,12 @@ export default function ScanScreen() {
           <Pressable
             onPress={() => setFlashOn((v) => !v)}
             style={{ overflow: "hidden", borderRadius: 999 }}
+            testID="scan-flash-toggle"
+            accessibilityRole="button"
+            accessibilityState={{ selected: flashOn }}
+            accessibilityLabel={t("scan.flashToggle", {
+              defaultValue: "Toggle flashlight",
+            })}
           >
             <BlurView
               intensity={40}

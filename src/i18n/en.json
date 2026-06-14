@@ -482,6 +482,8 @@
     "mapStart": "Start",
     "mapEnd": "Arrival",
     "fullscreen": "Fullscreen",
+    "pickupLabel": "Pickup",
+    "locationPermissionDenied": "Location access is off. The map shows the pickup point only.",
     "timeline": {
       "confirmed": "Booking confirmed",
       "confirmedTime": "12 June, 09:00",

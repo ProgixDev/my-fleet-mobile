@@ -121,8 +121,26 @@ export default function ResetPasswordScreen() {
               style={styles.input}
               autoCapitalize="none"
               autoCorrect={false}
+              testID="reset-password-password-input"
+              accessibilityLabel={t("resetPassword.passwordPlaceholder", {
+                defaultValue: "Nouveau mot de passe",
+              })}
             />
-            <TouchableOpacity onPress={() => setShowPwd((v) => !v)} hitSlop={10}>
+            <TouchableOpacity
+              onPress={() => setShowPwd((v) => !v)}
+              hitSlop={10}
+              testID="reset-password-visibility-toggle"
+              accessibilityRole="button"
+              accessibilityLabel={
+                showPwd
+                  ? t("resetPassword.hidePassword", {
+                      defaultValue: "Masquer le mot de passe",
+                    })
+                  : t("resetPassword.showPassword", {
+                      defaultValue: "Afficher le mot de passe",
+                    })
+              }
+            >
               {showPwd ? (
                 <EyeOff size={18} color={colors.textSecondary} strokeWidth={1.5} />
               ) : (
@@ -144,6 +162,10 @@ export default function ResetPasswordScreen() {
               style={styles.input}
               autoCapitalize="none"
               autoCorrect={false}
+              testID="reset-password-confirm-input"
+              accessibilityLabel={t("resetPassword.confirmPlaceholder", {
+                defaultValue: "Confirmer le mot de passe",
+              })}
             />
           </View>
 
@@ -155,6 +177,11 @@ export default function ResetPasswordScreen() {
             disabled={submitting}
             style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
             activeOpacity={0.85}
+            testID="reset-password-submit-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("resetPassword.submit", {
+              defaultValue: "Mettre à jour",
+            })}
           >
             {submitting ? (
               <ActivityIndicator color="#FFFFFF" />
@@ -170,6 +197,8 @@ export default function ResetPasswordScreen() {
           <TouchableOpacity
             onPress={() => router.replace("/auth")}
             style={{ alignItems: "center", marginTop: 16 }}
+            testID="reset-password-back-to-login-button"
+            accessibilityRole="button"
           >
             <Text style={{ color: colors.primary, fontWeight: "500" }}>
               {t("resetPassword.backToLogin", {

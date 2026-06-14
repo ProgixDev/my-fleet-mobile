@@ -246,6 +246,8 @@ export default function AuthScreen() {
               style={[styles.tab, activeTab === "login" && styles.tabActive]}
               activeOpacity={0.7}
               disabled={isLoading}
+              testID="auth-tab-login"
+              accessibilityRole="button"
             >
               <Text
                 style={[
@@ -267,6 +269,8 @@ export default function AuthScreen() {
               style={[styles.tab, activeTab === "signup" && styles.tabActive]}
               activeOpacity={0.7}
               disabled={isLoading}
+              testID="auth-tab-signup"
+              accessibilityRole="button"
             >
               <Text
                 style={[
@@ -301,6 +305,8 @@ export default function AuthScreen() {
                     style={styles.input}
                     autoCapitalize="words"
                     editable={!isLoading}
+                    testID="auth-name-input"
+                    accessibilityLabel={t("auth.namePlaceholder")}
                   />
                 </View>
                 {errors.name ? (
@@ -321,6 +327,8 @@ export default function AuthScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     editable={!isLoading}
+                    testID="auth-email-input"
+                    accessibilityLabel={t("auth.emailPlaceholder")}
                   />
                 </View>
                 {errors.email ? (
@@ -341,6 +349,8 @@ export default function AuthScreen() {
                     style={styles.input}
                     keyboardType="phone-pad"
                     editable={!isLoading}
+                    testID="auth-phone-input"
+                    accessibilityLabel={t("auth.phonePlaceholder")}
                   />
                 </View>
                 {errors.phone ? (
@@ -363,6 +373,8 @@ export default function AuthScreen() {
                     style={styles.input}
                     autoCapitalize="none"
                     editable={!isLoading}
+                    testID="auth-login-identifier-input"
+                    accessibilityLabel={t("auth.emailOrPhonePlaceholder")}
                   />
                 </View>
                 {errors.email ? (
@@ -384,12 +396,21 @@ export default function AuthScreen() {
                 style={styles.input}
                 secureTextEntry={!showPassword}
                 editable={!isLoading}
+                testID="auth-password-input"
+                accessibilityLabel={t("auth.passwordPlaceholder")}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 activeOpacity={0.7}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 disabled={isLoading}
+                testID="auth-password-visibility-toggle"
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showPassword
+                    ? t("auth.hidePassword", { defaultValue: "Hide password" })
+                    : t("auth.showPassword", { defaultValue: "Show password" })
+                }
               >
                 {showPassword ? (
                   <EyeOff size={20} color={iconColor} strokeWidth={1.5} />
@@ -412,6 +433,8 @@ export default function AuthScreen() {
                 activeOpacity={0.7}
                 onPress={handleForgotPassword}
                 disabled={isForgotLoading || isLoading}
+                testID="auth-forgot-password-button"
+                accessibilityRole="button"
               >
                 <Text style={styles.forgotText}>
                   {isForgotLoading
@@ -423,7 +446,12 @@ export default function AuthScreen() {
 
             {/* Submit Button */}
             <View style={styles.submitContainer}>
-              <Button fullWidth onPress={handleSubmit} disabled={isLoading}>
+              <Button
+                testID="auth-submit-button"
+                fullWidth
+                onPress={handleSubmit}
+                disabled={isLoading}
+              >
                 {activeTab === "signup"
                   ? t("auth.submitSignup")
                   : t("auth.submitLogin")}
@@ -443,6 +471,8 @@ export default function AuthScreen() {
                 style={[styles.socialButton, styles.socialButtonDisabled]}
                 activeOpacity={1}
                 disabled
+                testID="auth-social-google-button"
+                accessibilityRole="button"
               >
                 <GoogleIcon />
                 <Text style={styles.socialText}>{t("auth.socialGoogle")}</Text>
@@ -452,6 +482,8 @@ export default function AuthScreen() {
                 style={[styles.socialButton, styles.socialButtonDisabled]}
                 activeOpacity={1}
                 disabled
+                testID="auth-social-apple-button"
+                accessibilityRole="button"
               >
                 <AppleIcon />
                 <Text style={styles.socialText}>{t("auth.socialApple")}</Text>
@@ -465,6 +497,7 @@ export default function AuthScreen() {
               disabled={isLoading}
               onPress={() => router.push("/phone-login")}
               testID="auth-continue-with-phone-button"
+              accessibilityRole="button"
             >
               <Phone size={20} color="#EAEAEA" strokeWidth={1.5} />
               <Text style={styles.socialText}>
@@ -484,6 +517,8 @@ export default function AuthScreen() {
                   switchTab(activeTab === "signup" ? "login" : "signup")
                 }
                 activeOpacity={0.7}
+                testID="auth-toggle-mode-button"
+                accessibilityRole="button"
               >
                 <Text style={styles.bottomLinkPrimary}>
                   {activeTab === "signup"

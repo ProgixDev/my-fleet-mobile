@@ -124,6 +124,8 @@ export default function ProfileCompleteScreen() {
                 setValues((prev) => ({ ...prev, [field]: text }))
               }
               autoCapitalize={field === "id_type" ? "none" : "words"}
+              testID={`profile-complete-${field.replace(/_/g, "-")}-input`}
+              accessibilityLabel={FIELD_LABELS[field]}
             />
           </View>
         ))}
@@ -140,6 +142,9 @@ export default function ProfileCompleteScreen() {
           style={[styles.submit, mutation.isPending && styles.submitDisabled]}
           onPress={() => mutation.mutate()}
           disabled={mutation.isPending}
+          testID="profile-complete-submit-button"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: mutation.isPending }}
         >
           <Text style={styles.submitText}>
             {mutation.isPending ? "Saving..." : "Save and continue"}

@@ -482,6 +482,8 @@
     "mapStart": "Départ",
     "mapEnd": "Arrivée",
     "fullscreen": "Plein écran",
+    "pickupLabel": "Point de retrait",
+    "locationPermissionDenied": "Accès à la position désactivé. La carte affiche uniquement le point de retrait.",
     "timeline": {
       "confirmed": "Réservation confirmée",
       "confirmedTime": "12 Juin, 09:00",

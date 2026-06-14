@@ -79,6 +79,8 @@ export default function PhoneLoginScreen() {
             activeOpacity={0.7}
             disabled={busy}
             testID="phone-login-back-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("common.back", { defaultValue: "Back" })}
           >
             <ArrowLeft size={22} color={colors.text} strokeWidth={1.5} />
           </TouchableOpacity>
@@ -103,6 +105,7 @@ export default function PhoneLoginScreen() {
               autoCorrect={false}
               editable={!busy}
               testID="phone-login-input"
+              accessibilityLabel={t("phoneAuth.phonePlaceholder")}
             />
           </View>
           <Text style={styles.hint}>{t("phoneAuth.phoneHint")}</Text>

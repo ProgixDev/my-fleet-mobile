@@ -49,14 +49,24 @@ interface AccountItem {
   route?: string;
 }
 
-const accountItems: AccountItem[] = [
-  { icon: User, labelKey: "profile.accountInfo" },
+interface AccountItemWithTestID extends AccountItem {
+  testID: string;
+}
+
+const accountItems: AccountItemWithTestID[] = [
+  { icon: User, labelKey: "profile.accountInfo", testID: "profile-account-info-row" },
   {
     icon: CreditCard,
     labelKey: "profile.accountCards",
     route: "/payment-methods",
+    testID: "profile-account-cards-row",
   },
-  { icon: FileText, labelKey: "profile.accountDocuments", route: "/documents" },
+  {
+    icon: FileText,
+    labelKey: "profile.accountDocuments",
+    route: "/documents",
+    testID: "profile-account-documents-row",
+  },
 ];
 
 export default function ProfileScreen() {
@@ -264,6 +274,8 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={index}
+                  testID={item.testID}
+                  accessibilityRole="button"
                   onPress={() => item.route && router.push(item.route as never)}
                   style={[
                     styles.menuRow,
@@ -296,6 +308,8 @@ export default function ProfileScreen() {
 
           {/* Logout */}
           <TouchableOpacity
+            testID="profile-logout-button"
+            accessibilityRole="button"
             style={styles.logoutButton}
             activeOpacity={0.7}
             onPress={handleLogout}
@@ -316,6 +330,9 @@ export default function ProfileScreen() {
         onRequestClose={() => setLanguageSheetOpen(false)}
       >
         <Pressable
+          testID="profile-language-sheet-overlay"
+          accessibilityRole="button"
+          accessibilityLabel={t("common.cancel")}
           style={styles.langOverlay}
           onPress={() => setLanguageSheetOpen(false)}
         >
@@ -334,6 +351,8 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={locale}
+                  testID={`profile-language-option-${locale}`}
+                  accessibilityRole="button"
                   activeOpacity={0.7}
                   onPress={async () => {
                     setLanguageSheetOpen(false);

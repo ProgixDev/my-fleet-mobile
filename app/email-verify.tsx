@@ -107,6 +107,8 @@ export default function EmailVerifyScreen() {
             activeOpacity={0.7}
             disabled={busy}
             testID="email-verify-back-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("common.back", { defaultValue: "Back" })}
           >
             <ArrowLeft size={22} color={colors.text} strokeWidth={1.5} />
           </TouchableOpacity>
@@ -131,6 +133,7 @@ export default function EmailVerifyScreen() {
               autoFocus
               editable={!busy}
               testID="email-verify-input"
+              accessibilityLabel={t("emailAuth.codePlaceholder")}
             />
           </View>
 
@@ -153,6 +156,7 @@ export default function EmailVerifyScreen() {
             style={styles.resendRow}
             activeOpacity={0.7}
             testID="email-verify-resend-button"
+            accessibilityRole="button"
           >
             <Text
               style={[styles.resendText, resendIn > 0 && styles.resendDisabled]}
@@ -169,6 +173,7 @@ export default function EmailVerifyScreen() {
             activeOpacity={0.7}
             disabled={busy}
             testID="email-verify-change-email-button"
+            accessibilityRole="button"
           >
             <Text style={styles.changeText}>{t("emailAuth.changeEmail")}</Text>
           </TouchableOpacity>
