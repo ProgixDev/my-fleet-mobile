@@ -141,7 +141,20 @@
       "licenseLabel": "Permis de conduire",
       "front": "Recto",
       "back": "Verso",
+      "tapToAdd": "Appuyez pour ajouter",
+      "pickTitle": "Ajouter un document",
+      "takePhoto": "Prendre une photo",
+      "chooseLibrary": "Choisir dans la galerie",
       "tip": "💡 Assurez-vous que la photo est nette, bien éclairée et que tous les textes sont lisibles"
+    },
+    "permission": {
+      "title": "Autorisation requise",
+      "camera": "Autorisez l'accès à la caméra pour photographier vos documents.",
+      "library": "Autorisez l'accès à la galerie pour téléverser vos documents."
+    },
+    "errors": {
+      "noAgency": "Aucune agence associée. Scannez d'abord le QR code de votre agence.",
+      "uploadFailed": "Échec du téléversement. Veuillez réessayer."
     },
     "step3": {
       "title": "Vérification en cours",
@@ -352,6 +365,8 @@
       "valueEuro": "{{value}} €"
     },
     "continueToPayment": "Continuer vers le paiement",
+    "errorTitle": "Erreur",
+    "errorGeneric": "Impossible de créer la réservation. Réessayez plus tard.",
     "calendarModalTitle": "Choisir les dates",
     "calendarStart": "Début",
     "calendarEnd": "Fin",
@@ -370,7 +385,11 @@
     "addCard": "+ Ajouter une carte",
     "securePayment": "Paiement sécurisé",
     "guaranteed": "Protection garantie",
-    "confirmPay": "Confirmer et payer — {{amount}} €"
+    "confirmPay": "Confirmer et payer — {{amount}} €",
+    "errorTitle": "Erreur",
+    "missingBooking": "Réservation introuvable. Reprenez depuis vos réservations.",
+    "missingAgency": "Aucune agence associée à votre compte.",
+    "errorGeneric": "Impossible de démarrer le paiement. Réessayez plus tard."
   },
   "confirmation": {
     "stepLabel": "{{current}}/{{total}}",
@@ -547,6 +566,8 @@
     "idFront": "Carte d'identité — recto",
     "idBack": "Carte d'identité — verso",
     "license": "Permis de conduire",
+    "licenseFront": "Permis de conduire — recto",
+    "licenseBack": "Permis de conduire — verso",
     "proofAddress": "Justificatif de domicile",
     "addressTitle": "Adresse complète",
     "addressValue": "14 Rue de France, 06000 Nice",
@@ -555,7 +576,8 @@
     "statusPending": "En attente",
     "statusMissing": "Manquant",
     "replace": "Remplacer",
-    "upload": "Téléverser"
+    "upload": "Téléverser",
+    "loadError": "Impossible de charger vos documents. Tirez pour réessayer."
   },
   "help": {
     "title": "Centre d'aide",

@@ -1,9 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   myBookings,
   bookingDetail,
   bookingSummary,
+  createBooking,
   adaptServerBooking,
+  type CreateClientBookingPayload,
 } from "@/services/bookingService";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 
@@ -30,6 +32,26 @@ export function useBookingDetail(id: string | undefined) {
       return adaptServerBooking(raw);
     },
     enabled: !!id && !!agencyId,
+  });
+}
+
+/**
+ * Creates a booking against the currently paired agency. The server computes
+ * and returns the authoritative price (`totalAmount`, in cents); the client
+ * must never send or trust a locally-computed total. On success, the
+ * `['my-bookings']` cache is invalidated so the new booking shows up.
+ */
+export function useCreateBooking() {
+  const agencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: CreateClientBookingPayload) => {
+      if (!agencyId) throw new Error("No agency paired");
+      return createBooking(agencyId, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+    },
   });
 }
 

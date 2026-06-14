@@ -9,6 +9,8 @@ import {
   Dimensions,
   Modal,
   Pressable,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -29,11 +31,13 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import { useVehicle, useAgency } from "@/hooks/useAgencies";
+import { useCreateBooking } from "@/hooks/useBookings";
 import {
   computeDeliveryFee,
   type DeliveryComputeResult,
   type DeliveryConfig,
 } from "@/utils/delivery";
+import { centsToUnits } from "@/utils/money";
 import { useTheme } from "@/context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -53,6 +57,14 @@ function getFirstDayOfMonth(year: number, month: number): number {
 }
 function formatDateShort(d: Date, shortMonths: string[]): string {
   return `${d.getDate()} ${shortMonths[d.getMonth()]}`;
+}
+// Backend expects calendar dates as YYYY-MM-DD (see backend bookings.types.ts
+// `dateString`). Use local date parts, not toISOString(), to avoid a UTC
+// off-by-one when the device is behind UTC.
+function formatDateISO(d: Date): string {
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
 }
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
@@ -91,6 +103,7 @@ export default function BookingScreen() {
   const pairedAgencyId = useAgencyStore((s) => s.paired?.id ?? null);
   const { data: vehicle } = useVehicle(id, pairedAgencyId ?? undefined);
   const { data: agency } = useAgency(pairedAgencyId ?? undefined);
+  const createBooking = useCreateBooking();
   // Delivery config isn't shipped by the public agency endpoint yet — fall back
   // to disabled (no free-delivery option) until the backend exposes it. The
   // `as` cast keeps the wider union (TS narrows a bare `const = undefined` to
@@ -131,38 +144,6 @@ export default function BookingScreen() {
     };
   }, [deliveryAddress, pickupMethod, deliveryConfig]);
 
-  if (!vehicle || !agency) return null;
-
-  const days = daysBetween(startDate, endDate);
-  // Public catalog returns only `dailyRate`. A dedicated chauffeur price isn't
-  // exposed yet — use 30% of the daily rate as a placeholder until the backend
-  // ships a real value.
-  const chauffeurDailyPrice = Math.round(vehicle.dailyRate * 0.3);
-  const vehicleTotal = vehicle.dailyRate * days;
-  const chauffeurFee = withChauffeur ? chauffeurDailyPrice * days : 0;
-  const deliveryFee =
-    pickupMethod === "delivery" && deliveryResult && deliveryResult.ok
-      ? deliveryResult.fee
-      : 0;
-  const total = vehicleTotal + chauffeurFee + deliveryFee;
-
-  const canConfirm =
-    pickupMethod === "agency" ||
-    (pickupMethod === "delivery" && deliveryResult !== null && deliveryResult.ok);
-
-  const shortMonths = t("calendar.shortMonths", { returnObjects: true }) as string[];
-  const monthNames = t("calendar.months", { returnObjects: true }) as string[];
-  const daysOfWeek = t("calendar.daysOfWeek", { returnObjects: true }) as string[];
-
-  const dateLabel = t(
-    days === 1 ? "booking.dateLabelSingle" : "booking.dateLabel",
-    {
-      start: formatDateShort(startDate, shortMonths),
-      end: formatDateShort(endDate, shortMonths),
-      count: days,
-    },
-  );
-
   const openDateModal = useCallback(() => {
     setTempStart(startDate);
     setTempEnd(endDate);
@@ -200,6 +181,38 @@ export default function BookingScreen() {
     setShowDateModal(false);
   }, [tempStart, tempEnd]);
 
+  if (!vehicle || !agency) return null;
+
+  const days = daysBetween(startDate, endDate);
+  // Public catalog returns only `dailyRate`. A dedicated chauffeur price isn't
+  // exposed yet — use 30% of the daily rate as a placeholder until the backend
+  // ships a real value.
+  const chauffeurDailyPrice = Math.round(vehicle.dailyRate * 0.3);
+  const vehicleTotal = vehicle.dailyRate * days;
+  const chauffeurFee = withChauffeur ? chauffeurDailyPrice * days : 0;
+  const deliveryFee =
+    pickupMethod === "delivery" && deliveryResult && deliveryResult.ok
+      ? deliveryResult.fee
+      : 0;
+  const total = vehicleTotal + chauffeurFee + deliveryFee;
+
+  const canConfirm =
+    pickupMethod === "agency" ||
+    (pickupMethod === "delivery" && deliveryResult !== null && deliveryResult.ok);
+
+  const shortMonths = t("calendar.shortMonths", { returnObjects: true }) as string[];
+  const monthNames = t("calendar.months", { returnObjects: true }) as string[];
+  const daysOfWeek = t("calendar.daysOfWeek", { returnObjects: true }) as string[];
+
+  const dateLabel = t(
+    days === 1 ? "booking.dateLabelSingle" : "booking.dateLabel",
+    {
+      start: formatDateShort(startDate, shortMonths),
+      end: formatDateShort(endDate, shortMonths),
+      count: days,
+    },
+  );
+
   const prevMonth = () => {
     if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); }
     else setCalMonth(calMonth - 1);
@@ -214,6 +227,55 @@ export default function BookingScreen() {
   const calendarDays = Array.from({ length: firstDay }, () => 0).concat(
     Array.from({ length: daysInMonth }, (_, i) => i + 1)
   );
+
+  const handleConfirm = async () => {
+    if (!canConfirm || createBooking.isPending) return;
+    const isDelivery =
+      pickupMethod === "delivery" && deliveryResult !== null && deliveryResult.ok;
+    const options: NonNullable<
+      Parameters<typeof createBooking.mutateAsync>[0]["options"]
+    > = [];
+    if (withChauffeur) {
+      options.push({ id: "chauffeur", enabled: true });
+    }
+    if (isDelivery) {
+      // Delivery is disabled in Phase 1 (deliveryEnabled === false), so this
+      // branch is currently unreachable. Geocoded lat/lng aren't available
+      // client-side (computeDeliveryFee only mocks a distance), so we pass the
+      // address through pickupLocation and let the server price delivery.
+      options.push({ id: "delivery", enabled: true });
+    }
+    try {
+      // Server computes and returns the authoritative price; never trust the
+      // locally-computed euro total here.
+      const booking = await createBooking.mutateAsync({
+        vehicleId: id,
+        startDate: formatDateISO(startDate),
+        endDate: formatDateISO(endDate),
+        pickupTime,
+        returnTime,
+        pickupLocation: isDelivery ? deliveryAddress : "",
+        options,
+      });
+      router.push({
+        pathname: "/payment",
+        params: {
+          bookingId: booking.id,
+          amount: String(centsToUnits(booking.totalAmount)),
+        },
+      });
+    } catch (e) {
+      Alert.alert(
+        t("booking.errorTitle", { defaultValue: "Erreur" }),
+        e instanceof Error
+          ? e.message
+          : t("booking.errorGeneric", {
+              defaultValue:
+                "Impossible de créer la réservation. Réessayez plus tard.",
+            }),
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -522,28 +584,22 @@ export default function BookingScreen() {
 
         {/* Primary CTA */}
         <TouchableOpacity
-          disabled={!canConfirm}
-          onPress={() => {
-            if (!canConfirm) return;
-            const deliveryParams =
-              pickupMethod === "delivery" && deliveryResult && deliveryResult.ok
-                ? {
-                    deliveryAddress,
-                    deliveryDistanceKm: String(deliveryResult.distanceKm),
-                    deliveryFee: String(deliveryResult.fee),
-                  }
-                : {};
-            router.push({ pathname: "/payment", params: deliveryParams } as never);
-          }}
+          testID="booking-confirm-button"
+          disabled={!canConfirm || createBooking.isPending}
+          onPress={handleConfirm}
           style={[
             styles.primaryCta,
-            !canConfirm && { opacity: 0.5 },
+            (!canConfirm || createBooking.isPending) && { opacity: 0.5 },
           ]}
           activeOpacity={0.9}
         >
-          <Text style={styles.primaryCtaText}>
-            {t("booking.continueToPayment")}
-          </Text>
+          {createBooking.isPending ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.primaryCtaText}>
+              {t("booking.continueToPayment")}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
