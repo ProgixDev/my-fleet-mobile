@@ -55,6 +55,9 @@ export default function AgencyListScreen() {
           {/* Header */}
           <View style={styles.headerRow}>
             <TouchableOpacity
+              testID="agencies-back-button"
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               onPress={goBack}
               activeOpacity={0.7}
               style={styles.backBtn}
@@ -76,6 +79,8 @@ export default function AgencyListScreen() {
               return (
                 <TouchableOpacity
                   key={city}
+                  testID={`agencies-city-filter-${city}`}
+                  accessibilityRole="button"
                   onPress={() => setSelectedCity(city)}
                   activeOpacity={0.85}
                   style={[
@@ -99,7 +104,7 @@ export default function AgencyListScreen() {
               <Text style={{ color: colors.textSecondary }}>
                 {t("agencies.loadError", { defaultValue: "Couldn't load agencies." })}
               </Text>
-              <TouchableOpacity onPress={() => refetch()} style={{ padding: 12 }}>
+              <TouchableOpacity testID="agencies-retry-button" accessibilityRole="button" onPress={() => refetch()} style={{ padding: 12 }}>
                 <Text style={{ color: colors.primary, fontWeight: "600" }}>
                   {t("common.retry", { defaultValue: "Retry" })}
                 </Text>
@@ -122,6 +127,8 @@ export default function AgencyListScreen() {
                 return (
                   <TouchableOpacity
                     key={agency.id}
+                    testID={`agencies-card-${agency.id}`}
+                    accessibilityRole="button"
                     activeOpacity={0.9}
                     style={styles.card}
                     onPress={() => router.push(`/agency/${agency.id}` as any)}

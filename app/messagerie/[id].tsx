@@ -159,6 +159,9 @@ export default function MessagerieScreen() {
         ]}
       >
         <Pressable
+          testID="messagerie-back-button"
+          accessibilityRole="button"
+          accessibilityLabel={t("common.back", { defaultValue: "Retour" })}
           onPress={goBack}
           style={styles.backBtn}
           hitSlop={10}
@@ -182,6 +185,9 @@ export default function MessagerieScreen() {
         </View>
 
         <Pressable
+          testID="messagerie-call-button"
+          accessibilityRole="button"
+          accessibilityLabel={t("messagerie.callTitle", { defaultValue: "Appeler l'agence" })}
           onPress={async () => {
             // Dial the agency directly via the OS phone dialer using the
             // hydrated agency phone (from the booking). Fall back to an alert
@@ -249,6 +255,9 @@ export default function MessagerieScreen() {
             />
           </View>
           <Pressable
+            testID="messagerie-send-button"
+            accessibilityRole="button"
+            accessibilityLabel="Envoyer"
             onPress={handleSend}
             disabled={!canSend}
             style={[

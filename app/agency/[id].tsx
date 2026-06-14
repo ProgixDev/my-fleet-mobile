@@ -85,6 +85,9 @@ export default function AgencyDetailScreen() {
           {/* Back */}
           <SafeAreaView style={styles.heroNav} edges={["top"]}>
             <TouchableOpacity
+              testID="agency-back-button"
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               onPress={goBack}
               style={styles.heroButton}
               activeOpacity={0.7}
@@ -92,6 +95,9 @@ export default function AgencyDetailScreen() {
               <ArrowLeft size={20} color="#EAEAEA" strokeWidth={1.5} />
             </TouchableOpacity>
             <TouchableOpacity
+              testID="agency-share-button"
+              accessibilityRole="button"
+              accessibilityLabel="Share"
               style={styles.heroButton}
               activeOpacity={0.7}
               onPress={() => {
@@ -144,6 +150,8 @@ export default function AgencyDetailScreen() {
           {/* ─── Tabs ─── */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
+              testID="agency-tab-vehicles"
+              accessibilityRole="button"
               onPress={() => setActiveTab("vehicles")}
               style={[styles.tab, activeTab === "vehicles" && styles.tabActive]}
               activeOpacity={0.7}
@@ -163,6 +171,8 @@ export default function AgencyDetailScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              testID="agency-tab-reviews"
+              accessibilityRole="button"
               onPress={() => setActiveTab("reviews")}
               style={[styles.tab, activeTab === "reviews" && styles.tabActive]}
               activeOpacity={0.7}
@@ -195,6 +205,8 @@ export default function AgencyDetailScreen() {
                 {agencyVehicles.map((vehicle) => (
                   <TouchableOpacity
                     key={vehicle.id}
+                    testID={`agency-vehicle-card-${vehicle.id}`}
+                    accessibilityRole="button"
                     activeOpacity={0.9}
                     style={styles.vehicleMiniCard}
                     onPress={() =>
