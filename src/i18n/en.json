@@ -550,7 +550,12 @@
     "terms": "Terms of service",
     "privacy": "Privacy policy",
     "about": "About",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "deleteAccount": "Delete account",
+    "deleteAccountConfirmTitle": "Delete account?",
+    "deleteAccountConfirmMessage": "This is irreversible. Your account and personal data will be permanently deleted and you will be signed out.",
+    "deleteAccountConfirmCta": "Delete account",
+    "deleteAccountError": "We couldn't delete your account. Please try again."
   },
   "paymentMethods": {
     "title": "Payment methods",

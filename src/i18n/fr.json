@@ -550,7 +550,12 @@
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité",
     "about": "À propos",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "deleteAccount": "Supprimer le compte",
+    "deleteAccountConfirmTitle": "Supprimer le compte ?",
+    "deleteAccountConfirmMessage": "Cette action est irréversible. Votre compte et vos données personnelles seront définitivement supprimés et vous serez déconnecté.",
+    "deleteAccountConfirmCta": "Supprimer le compte",
+    "deleteAccountError": "Impossible de supprimer votre compte. Veuillez réessayer."
   },
   "paymentMethods": {
     "title": "Moyens de paiement",
