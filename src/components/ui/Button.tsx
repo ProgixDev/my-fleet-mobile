@@ -17,6 +17,7 @@ interface ButtonProps {
   onPress?: () => void;
   style?: ViewStyle;
   testID?: string;
+  accessibilityLabel?: string;
 }
 
 const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
@@ -50,6 +51,7 @@ export function Button({
   onPress,
   style,
   testID,
+  accessibilityLabel,
 }: ButtonProps) {
   const variantStyle = variantStyles[variant];
 
@@ -59,6 +61,8 @@ export function Button({
       disabled={disabled}
       activeOpacity={0.85}
       testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? children}
       style={[
         styles.base,
         variantStyle.container,

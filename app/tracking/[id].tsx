@@ -15,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowLeft,
   FileText,
-  Phone,
   MessageCircle,
   Navigation,
 } from "lucide-react-native";
@@ -738,13 +737,8 @@ export default function TrackingScreen() {
               </View>
             </View>
             <View style={styles.driverActions}>
-              <TouchableOpacity
-                style={[styles.actionBtnPrimary, { backgroundColor: colors.primary }]}
-                activeOpacity={0.7}
-                onPress={() => router.push(`/call/${id}` as any)}
-              >
-                <Phone size={18} color="#FFFFFF" strokeWidth={1.8} />
-              </TouchableOpacity>
+              {/* In-app calling is not shipped in v1.0 (no telephony backend);
+                  the call entry point is removed. Messaging is the live channel. */}
               <TouchableOpacity
                 style={[
                   styles.actionBtnSecondary,
