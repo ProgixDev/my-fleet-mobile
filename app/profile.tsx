@@ -82,10 +82,10 @@ export default function ProfileScreen() {
   const displayName = user?.name?.trim() || user?.email || "—";
 
   const currentPoints = loyalty?.points ?? 0;
-  const currentTierName = loyalty?.tier ?? "—";
-  const nextTierName = loyalty?.nextTier ?? null;
-  const pointsToNextTier = loyalty?.pointsToNextTier ?? 0;
-  const tierBenefits: string[] = [];
+  const currentTierName = loyalty?.tier?.name ?? "—";
+  const nextTierName = loyalty?.nextTier?.name ?? null;
+  const pointsToNextTier = loyalty?.pointsToNext ?? 0;
+  const tierBenefits: string[] = loyalty?.tier?.benefits ?? [];
   const history = loyalty?.history ?? [];
 
   const handleLogout = () => {
@@ -217,7 +217,7 @@ export default function ProfileScreen() {
                   ]}
                 >
                   <View style={styles.historyLeft}>
-                    {item.points >= 0 ? (
+                    {item.amount >= 0 ? (
                       <TrendingUp size={20} color="#2ECC71" strokeWidth={1.5} />
                     ) : (
                       <TrendingDown
@@ -233,7 +233,7 @@ export default function ProfileScreen() {
                           { color: colors.text },
                         ]}
                       >
-                        {item.label}
+                        {item.description}
                       </Text>
                       <Text
                         style={[
@@ -249,12 +249,12 @@ export default function ProfileScreen() {
                     style={[
                       styles.historyAmount,
                       {
-                        color: item.points >= 0 ? "#2ECC71" : colors.error,
+                        color: item.amount >= 0 ? "#2ECC71" : colors.error,
                       },
                     ]}
                   >
-                    {item.points >= 0 ? "+" : ""}
-                    {item.points}
+                    {item.amount >= 0 ? "+" : ""}
+                    {item.amount}
                   </Text>
                 </View>
               ))}

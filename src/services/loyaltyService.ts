@@ -1,25 +1,30 @@
 import { apiRequest } from "@/services/api";
 import { getAuthHeader } from "@/services/authHeader";
 
-export interface LoyaltyStatus {
-  tier: string;
+// Mirrors the backend /client/loyalty/status shape: tier and nextTier are
+// objects (not strings), the field is pointsToNext (not pointsToNextTier), and
+// history items use description/amount/type.
+export interface LoyaltyTier {
+  id: "bronze" | "silver" | "gold" | "platinum";
+  name: string;
   points: number;
-  pointsToNextTier: number;
-  nextTier: string | null;
-  history: Array<{
-    id: string;
-    label: string;
-    points: number;
-    date: string;
-  }>;
+  benefits: string[];
 }
 
-export interface LoyaltyTier {
+export interface LoyaltyHistoryItem {
   id: string;
-  name: string;
-  pointsRequired: number;
-  benefits: string[];
-  color: string;
+  type: "earned" | "redeemed";
+  description: string;
+  amount: number;
+  date: string;
+}
+
+export interface LoyaltyStatus {
+  points: number;
+  tier: LoyaltyTier;
+  nextTier: LoyaltyTier | null;
+  pointsToNext: number;
+  history: LoyaltyHistoryItem[];
 }
 
 export async function getLoyaltyStatus(): Promise<LoyaltyStatus> {
