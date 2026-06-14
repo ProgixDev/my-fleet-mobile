@@ -183,7 +183,13 @@ export default function OnboardingScreen() {
           className="absolute z-10"
           style={{ top: 66, right: 20 }}
         >
-          <Pressable onPress={handleSkip} hitSlop={10}>
+          <Pressable
+            onPress={handleSkip}
+            hitSlop={10}
+            testID="onboarding-skip-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("onboarding.skip")}
+          >
             <BlurView
               intensity={30}
               tint="dark"
@@ -316,6 +322,12 @@ export default function OnboardingScreen() {
             {/* CTA pill: accent circle + centered label + triple chevron */}
             <Pressable
               onPress={handleNext}
+              testID={
+                isLastSlide
+                  ? "onboarding-get-started-button"
+                  : "onboarding-next-button"
+              }
+              accessibilityRole="button"
               style={({ pressed }) => ({
                 opacity: pressed ? 0.85 : 1,
                 transform: [{ scale: pressed ? 0.98 : 1 }],

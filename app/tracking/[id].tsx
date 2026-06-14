@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   View,
@@ -6,330 +6,169 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import * as Location from "expo-location";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import MapView, { Marker, PROVIDER_DEFAULT, type Region } from "react-native-maps";
 import {
   ArrowLeft,
   FileText,
+  MapPin,
   MessageCircle,
-  Navigation,
 } from "lucide-react-native";
-import Svg, {
-  Path,
-  Circle,
-  Rect,
-  Line,
-  Defs,
-  LinearGradient as SvgGrad,
-  Stop,
-  G,
-} from "react-native-svg";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  useAnimatedProps,
   withRepeat,
   withSequence,
   withTiming,
   Easing,
-  interpolate,
-  useDerivedValue,
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { useBookingDetail } from "@/hooks/useBookings";
+import { useAgency } from "@/hooks/useAgencies";
+import { useAgencyStore } from "@/stores/useAgencyStore";
 import { useTheme } from "@/context/ThemeContext";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const MAP_HEIGHT = 380;
-const MAP_PADDING = 30;
 
-/* ─── Route waypoints (curved path from bottom-left to top-right) ─── */
-const ROUTE_POINTS = [
-  { x: 40, y: 320 },
-  { x: 70, y: 290 },
-  { x: 110, y: 270 },
-  { x: 145, y: 240 },
-  { x: 170, y: 210 },
-  { x: 210, y: 190 },
-  { x: 250, y: 165 },
-  { x: 280, y: 140 },
-  { x: 310, y: 115 },
-  { x: 340, y: 90 },
-  { x: 360, y: 65 },
-];
+// Fallback region (Nice, France) used when no agency address can be geocoded
+// and the user has not granted location permission, so the map still renders.
+const FALLBACK_REGION: Region = {
+  latitude: 43.7102,
+  longitude: 7.262,
+  latitudeDelta: 0.08,
+  longitudeDelta: 0.08,
+};
 
-// Inline the route data so worklets can capture it as a constant
-const ROUTE_XS = ROUTE_POINTS.map((p) => p.x);
-const ROUTE_YS = ROUTE_POINTS.map((p) => p.y);
-const ROUTE_COUNT = ROUTE_POINTS.length;
+type LatLng = { latitude: number; longitude: number };
 
-/* ─── Build SVG path string from waypoints ─── */
-function buildSmoothPath(): string {
-  const pts = ROUTE_POINTS;
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const prev = pts[i - 1];
-    const curr = pts[i];
-    const cpx = (prev.x + curr.x) / 2;
-    d += ` Q ${prev.x + (curr.x - prev.x) * 0.5} ${prev.y}, ${cpx} ${(prev.y + curr.y) / 2}`;
-  }
-  const last = pts[pts.length - 1];
-  d += ` L ${last.x} ${last.y}`;
-  return d;
-}
-
-/* ─── Fake street blocks for map realism ─── */
-function MapStreets() {
-  const blocks = [
-    { x: 20, y: 20, w: 80, h: 50 },
-    { x: 120, y: 30, w: 60, h: 70 },
-    { x: 200, y: 20, w: 90, h: 55 },
-    { x: 310, y: 15, w: 70, h: 45 },
-    { x: 15, y: 100, w: 70, h: 60 },
-    { x: 110, y: 120, w: 55, h: 50 },
-    { x: 190, y: 100, w: 80, h: 65 },
-    { x: 300, y: 80, w: 60, h: 50 },
-    { x: 30, y: 190, w: 65, h: 50 },
-    { x: 120, y: 200, w: 70, h: 45 },
-    { x: 220, y: 185, w: 60, h: 60 },
-    { x: 310, y: 155, w: 65, h: 55 },
-    { x: 20, y: 270, w: 80, h: 55 },
-    { x: 130, y: 280, w: 60, h: 40 },
-    { x: 220, y: 265, w: 75, h: 50 },
-    { x: 320, y: 240, w: 55, h: 50 },
-    { x: 60, y: 340, w: 90, h: 30 },
-    { x: 180, y: 335, w: 70, h: 35 },
-    { x: 280, y: 320, w: 80, h: 40 },
-  ];
-
-  return (
-    <G>
-      {blocks.map((b, i) => (
-        <Rect
-          key={i}
-          x={b.x}
-          y={b.y}
-          width={b.w}
-          height={b.h}
-          rx={4}
-          fill="rgba(255,255,255,0.04)"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={0.5}
-        />
-      ))}
-    </G>
-  );
-}
-
-/* ─── Fake street lines ─── */
-function MapRoads() {
-  const roads = [
-    // Horizontal roads
-    { x1: 0, y1: 85, x2: SCREEN_WIDTH, y2: 85 },
-    { x1: 0, y1: 175, x2: SCREEN_WIDTH, y2: 175 },
-    { x1: 0, y1: 260, x2: SCREEN_WIDTH, y2: 260 },
-    { x1: 0, y1: 330, x2: SCREEN_WIDTH, y2: 330 },
-    // Vertical roads
-    { x1: 105, y1: 0, x2: 105, y2: MAP_HEIGHT },
-    { x1: 195, y1: 0, x2: 195, y2: MAP_HEIGHT },
-    { x1: 295, y1: 0, x2: 295, y2: MAP_HEIGHT },
-  ];
-
-  return (
-    <G>
-      {roads.map((r, i) => (
-        <Line
-          key={i}
-          x1={r.x1}
-          y1={r.y1}
-          x2={r.x2}
-          y2={r.y2}
-          stroke="rgba(255,255,255,0.07)"
-          strokeWidth={2}
-        />
-      ))}
-    </G>
-  );
-}
-
-/* ─── Animated Map ─── */
-function AnimatedMap() {
+/* ─── Real map (Apple Maps via PROVIDER_DEFAULT on iOS, no API key) ─── */
+function RealMap({ address }: { address: string | undefined }) {
   const { t } = useTranslation();
-  const progress = useSharedValue(0);
+  const mapRef = useRef<MapView>(null);
+  const [pickup, setPickup] = useState<LatLng | null>(null);
+  const [userCoords, setUserCoords] = useState<LatLng | null>(null);
+  const [ready, setReady] = useState(false);
 
+  // Request foreground location permission + read the user's position once.
   useEffect(() => {
-    progress.value = withRepeat(
-      withTiming(1, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        if (cancelled) return;
+        setUserCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      } catch {
+        // Permission denied or location unavailable — fall back silently.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const carX = useDerivedValue(() => {
-    'worklet';
-    const total = ROUTE_COUNT - 1;
-    const scaled = progress.value * total;
-    const idx = Math.min(Math.floor(scaled), total - 1);
-    const t = scaled - idx;
-    return ROUTE_XS[idx] + (ROUTE_XS[idx + 1] - ROUTE_XS[idx]) * t;
-  });
-  const carY = useDerivedValue(() => {
-    'worklet';
-    const total = ROUTE_COUNT - 1;
-    const scaled = progress.value * total;
-    const idx = Math.min(Math.floor(scaled), total - 1);
-    const t = scaled - idx;
-    return ROUTE_YS[idx] + (ROUTE_YS[idx + 1] - ROUTE_YS[idx]) * t;
-  });
-
-  const carStyle = useAnimatedStyle(() => ({
-    position: "absolute" as const,
-    left: carX.value - 22,
-    top: carY.value - 22,
-    width: 44,
-    height: 44,
-  }));
-
-  // Pulsing ring around the car
-  const pulseScale = useSharedValue(1);
-  const pulseOpacity = useSharedValue(0.5);
-
+  // Geocode the agency / pickup address into a coordinate.
   useEffect(() => {
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.8, { duration: 1200, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 0 })
-      ),
-      -1,
-      false
-    );
-    pulseOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) }),
-        withTiming(0.5, { duration: 0 })
-      ),
-      -1,
-      false
-    );
-  }, []);
+    let cancelled = false;
+    if (!address) {
+      setReady(true);
+      return;
+    }
+    (async () => {
+      try {
+        const results = await Location.geocodeAsync(address);
+        if (cancelled) return;
+        if (results.length > 0) {
+          setPickup({
+            latitude: results[0].latitude,
+            longitude: results[0].longitude,
+          });
+        }
+      } catch {
+        // Geocoding failed — fall back to user/default region.
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    position: "absolute" as const,
-    left: carX.value - 30,
-    top: carY.value - 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#4A1942",
-    transform: [{ scale: pulseScale.value }],
-    opacity: pulseOpacity.value,
-  }));
+  // Fit the map to show the pickup marker (and the user when available).
+  useEffect(() => {
+    if (!ready) return;
+    const points: LatLng[] = [];
+    if (pickup) points.push(pickup);
+    if (userCoords) points.push(userCoords);
 
-  const routePath = buildSmoothPath();
-  const startPt = ROUTE_POINTS[0];
-  const endPt = ROUTE_POINTS[ROUTE_POINTS.length - 1];
+    if (points.length === 0) return;
+
+    if (points.length === 1) {
+      mapRef.current?.animateToRegion(
+        {
+          ...points[0],
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        },
+        600,
+      );
+      return;
+    }
+
+    mapRef.current?.fitToCoordinates(points, {
+      edgePadding: { top: 80, right: 60, bottom: 120, left: 60 },
+      animated: true,
+    });
+  }, [ready, pickup, userCoords]);
+
+  // Initial region: prefer pickup, then user, then a sensible default.
+  const initialRegion: Region = pickup
+    ? { ...pickup, latitudeDelta: 0.05, longitudeDelta: 0.05 }
+    : userCoords
+      ? { ...userCoords, latitudeDelta: 0.05, longitudeDelta: 0.05 }
+      : FALLBACK_REGION;
 
   return (
     <View style={styles.mapContainer}>
-      <Svg
-        width={SCREEN_WIDTH}
-        height={MAP_HEIGHT}
-        viewBox={`0 0 ${SCREEN_WIDTH} ${MAP_HEIGHT}`}
+      <MapView
+        testID="tracking-map"
+        ref={mapRef}
+        provider={PROVIDER_DEFAULT}
+        style={StyleSheet.absoluteFill}
+        initialRegion={initialRegion}
+        showsUserLocation
+        showsMyLocationButton={false}
+        showsCompass={false}
+        toolbarEnabled={false}
       >
-        <Defs>
-          <SvgGrad id="routeGrad" x1="0" y1="1" x2="1" y2="0">
-            <Stop offset="0" stopColor="#2ECC71" stopOpacity="0.8" />
-            <Stop offset="0.5" stopColor="#4A1942" stopOpacity="1" />
-            <Stop offset="1" stopColor="#E74C3C" stopOpacity="0.8" />
-          </SvgGrad>
-        </Defs>
+        {pickup && (
+          <Marker
+            testID="tracking-pickup-marker"
+            coordinate={pickup}
+            title={t("tracking.pickupLabel")}
+            description={address}
+          />
+        )}
+      </MapView>
 
-        {/* Roads */}
-        <MapRoads />
-
-        {/* City blocks */}
-        <MapStreets />
-
-        {/* Route shadow */}
-        <Path
-          d={routePath}
-          fill="none"
-          stroke="rgba(74, 25, 66, 0.3)"
-          strokeWidth={12}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Route dashed trail */}
-        <Path
-          d={routePath}
-          fill="none"
-          stroke="rgba(74, 25, 66, 0.15)"
-          strokeWidth={20}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Main route line */}
-        <Path
-          d={routePath}
-          fill="none"
-          stroke="url(#routeGrad)"
-          strokeWidth={5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Dotted center line */}
-        <Path
-          d={routePath}
-          fill="none"
-          stroke="rgba(255,255,255,0.25)"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeDasharray="6,8"
-        />
-
-        {/* Start marker — outer ring */}
-        <Circle cx={startPt.x} cy={startPt.y} r={14} fill="rgba(46,204,113,0.15)" />
-        <Circle cx={startPt.x} cy={startPt.y} r={9} fill="rgba(46,204,113,0.3)" />
-        <Circle cx={startPt.x} cy={startPt.y} r={5} fill="#2ECC71" />
-
-        {/* End marker — outer ring */}
-        <Circle cx={endPt.x} cy={endPt.y} r={14} fill="rgba(231,76,60,0.15)" />
-        <Circle cx={endPt.x} cy={endPt.y} r={9} fill="rgba(231,76,60,0.3)" />
-        <Circle cx={endPt.x} cy={endPt.y} r={5} fill="#E74C3C" />
-
-        {/* Start label */}
-        <Rect x={startPt.x - 30} y={startPt.y + 18} width={60} height={20} rx={10} fill="rgba(46,204,113,0.2)" />
-
-        {/* End label */}
-        <Rect x={endPt.x - 25} y={endPt.y - 35} width={50} height={20} rx={10} fill="rgba(231,76,60,0.2)" />
-      </Svg>
-
-      {/* Start label text */}
-      <View style={[styles.markerLabel, { left: startPt.x - 30, top: startPt.y + 20 }]}>
-        <Text style={[styles.markerLabelText, { color: "#2ECC71" }]}>{t("tracking.mapStart")}</Text>
-      </View>
-
-      {/* End label text */}
-      <View style={[styles.markerLabel, { left: endPt.x - 25, top: endPt.y - 33 }]}>
-        <Text style={[styles.markerLabelText, { color: "#E74C3C" }]}>{t("tracking.mapEnd")}</Text>
-      </View>
-
-      {/* Pulsing ring behind car */}
-      <Animated.View style={pulseStyle} />
-
-      {/* Animated car */}
-      <Animated.View style={carStyle}>
-        <View style={styles.carBubble}>
-          <Text style={styles.carEmoji}>🚗</Text>
+      {!ready && (
+        <View style={styles.mapLoading} pointerEvents="none">
+          <ActivityIndicator color="#EAEAEA" />
         </View>
-      </Animated.View>
+      )}
     </View>
   );
 }
@@ -566,8 +405,19 @@ export default function TrackingScreen() {
   const [isGeneratingContract, setIsGeneratingContract] = useState(false);
 
   const { data: booking } = useBookingDetail(id);
+  const pairedAgency = useAgencyStore((s) => s.paired);
+  // Refresh the paired agency to get the freshest address; falls back to the
+  // persisted store value (and that to undefined) so geocoding stays best-effort.
+  const { data: agency } = useAgency(pairedAgency?.id ?? pairedAgency?.slug);
+  const resolvedAgency = agency ?? pairedAgency;
   const agencyLogo = "P";
   const agencyName = booking?.agencyName || t("tracking.fallbackAgency");
+
+  // Build the pickup address to geocode: street + city when available.
+  const pickupAddress =
+    [resolvedAgency?.address, resolvedAgency?.city]
+      .filter((part): part is string => !!part && part.trim().length > 0)
+      .join(", ") || undefined;
 
   const handleGenerateContract = async () => {
     if (!booking) {
@@ -610,10 +460,11 @@ export default function TrackingScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ─── Map Section ─── */}
       <View style={styles.mapSection}>
-        <AnimatedMap />
+        <RealMap address={pickupAddress} />
 
         <SafeAreaView style={styles.mapBackRow} edges={["top"]}>
           <TouchableOpacity
+            testID="tracking-back-button"
             onPress={() => router.back()}
             style={styles.mapBtn}
             activeOpacity={0.7}
@@ -622,19 +473,14 @@ export default function TrackingScreen() {
           </TouchableOpacity>
         </SafeAreaView>
 
-        <TouchableOpacity
-          style={styles.fullscreenBtn}
-          activeOpacity={0.7}
-          onPress={() =>
-            Alert.alert(
-              t("tracking.fullscreen"),
-              "Fullscreen map view is coming soon.",
-            )
-          }
-        >
-          <Navigation size={16} color="#EAEAEA" strokeWidth={1.5} />
-          <Text style={styles.fullscreenText}>{t("tracking.fullscreen")}</Text>
-        </TouchableOpacity>
+        {pickupAddress && (
+          <View style={styles.pickupPill} pointerEvents="none">
+            <MapPin size={14} color="#EAEAEA" strokeWidth={1.8} />
+            <Text style={styles.pickupPillText} numberOfLines={1}>
+              {t("tracking.pickupLabel")} · {pickupAddress}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* ─── Bottom Card ─── */}
@@ -774,34 +620,37 @@ const styles = StyleSheet.create({
     backgroundColor: "#0d0d0d",
     position: "relative",
   },
-  markerLabel: {
+  mapLoading: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0d0d0d",
+  },
+
+  /* Pickup info pill */
+  pickupPill: {
     position: "absolute",
-    width: 60,
-    height: 20,
+    bottom: 36,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: "rgba(46,28,43,0.92)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  markerLabelText: {
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 9,
-  },
-  carBubble: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#4A1942",
-    borderWidth: 3,
-    borderColor: "#EAEAEA",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#4A1942",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  carEmoji: {
-    fontSize: 20,
+  pickupPillText: {
+    flex: 1,
+    fontFamily: "Poppins_500Medium",
+    fontSize: 12,
+    color: "#EAEAEA",
   },
 
   /* Nav buttons */
@@ -824,29 +673,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
-  fullscreenBtn: {
-    position: "absolute",
-    bottom: 36,
-    right: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "#4A1942",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  fullscreenText: {
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 13,
-    color: "#EAEAEA",
-  },
-
   /* ─── Bottom Card ─── */
   bottomCard: {
     flex: 1,

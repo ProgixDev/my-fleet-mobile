@@ -84,7 +84,12 @@ export default function SettingsScreen() {
             label={t("settings.notifications")}
             colors={colors}
             trailing={
-              <Toggle value={notifications} onChange={setNotifications} />
+              <Toggle
+                value={notifications}
+                onChange={setNotifications}
+                testID="settings-notifications-toggle"
+                accessibilityLabel={t("settings.notifications")}
+              />
             }
           />
 
@@ -93,6 +98,7 @@ export default function SettingsScreen() {
             icon={Globe}
             label={t("settings.language")}
             colors={colors}
+            testID="settings-language-row"
             onPress={() => setLanguageSheetOpen(true)}
             trailing={
               <View style={styles.trailingRow}>
@@ -110,7 +116,14 @@ export default function SettingsScreen() {
             label={t("settings.darkMode")}
             colors={colors}
             isLast
-            trailing={<Toggle value={isDark} onChange={toggleTheme} />}
+            trailing={
+              <Toggle
+                value={isDark}
+                onChange={toggleTheme}
+                testID="settings-dark-mode-toggle"
+                accessibilityLabel={t("settings.darkMode")}
+              />
+            }
           />
         </View>
 
@@ -121,6 +134,7 @@ export default function SettingsScreen() {
             icon={CreditCard}
             label={t("settings.paymentMethods")}
             colors={colors}
+            testID="settings-payment-methods-row"
             onPress={() => router.push("/payment-methods" as never)}
             trailing={
               <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
@@ -130,6 +144,7 @@ export default function SettingsScreen() {
             icon={FileText}
             label={t("settings.documents")}
             colors={colors}
+            testID="settings-documents-row"
             onPress={() => router.push("/documents" as never)}
             isLast
             trailing={
@@ -145,6 +160,7 @@ export default function SettingsScreen() {
             icon={HelpCircle}
             label={t("settings.help")}
             colors={colors}
+            testID="settings-help-row"
             onPress={() => router.push("/help" as never)}
             trailing={
               <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
@@ -154,6 +170,7 @@ export default function SettingsScreen() {
             icon={MessageSquare}
             label={t("settings.contact")}
             colors={colors}
+            testID="settings-contact-row"
             onPress={() => router.push("/contact" as never)}
             trailing={
               <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
@@ -163,6 +180,7 @@ export default function SettingsScreen() {
             icon={Send}
             label={t("settings.feedback")}
             colors={colors}
+            testID="settings-feedback-row"
             onPress={() => router.push("/feedback" as never)}
             isLast
             trailing={
@@ -178,6 +196,7 @@ export default function SettingsScreen() {
             icon={FileSignature}
             label={t("settings.terms")}
             colors={colors}
+            testID="settings-terms-row"
             onPress={() => router.push("/terms" as never)}
             trailing={
               <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
@@ -187,6 +206,7 @@ export default function SettingsScreen() {
             icon={ShieldCheck}
             label={t("settings.privacy")}
             colors={colors}
+            testID="settings-privacy-row"
             onPress={() => router.push("/privacy" as never)}
             trailing={
               <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
@@ -196,6 +216,7 @@ export default function SettingsScreen() {
             icon={Info}
             label={t("settings.about")}
             colors={colors}
+            testID="settings-about-row"
             onPress={() => router.push("/about" as never)}
             isLast
             trailing={
@@ -215,6 +236,9 @@ export default function SettingsScreen() {
         onRequestClose={() => setLanguageSheetOpen(false)}
       >
         <Pressable
+          testID="settings-language-sheet-overlay"
+          accessibilityRole="button"
+          accessibilityLabel={t("common.cancel")}
           style={styles.sheetOverlay}
           onPress={() => setLanguageSheetOpen(false)}
         >
@@ -229,6 +253,8 @@ export default function SettingsScreen() {
             {SUPPORTED_LOCALES.map((loc) => (
               <Pressable
                 key={loc}
+                testID={`settings-language-option-${loc}`}
+                accessibilityRole="button"
                 style={styles.sheetRow}
                 onPress={() => handlePickLocale(loc)}
               >
@@ -262,6 +288,7 @@ function SettingRow({
   trailing,
   isLast,
   colors,
+  testID,
 }: {
   icon: LucideIcon;
   label: string;
@@ -269,6 +296,7 @@ function SettingRow({
   trailing?: React.ReactNode;
   isLast?: boolean;
   colors: ReturnType<typeof useTheme>["colors"];
+  testID?: string;
 }) {
   const content = (
     <View
@@ -287,6 +315,8 @@ function SettingRow({
   if (onPress) {
     return (
       <Pressable
+        testID={testID}
+        accessibilityRole="button"
         onPress={onPress}
         android_ripple={{ color: "rgba(255,255,255,0.04)" }}
       >
@@ -300,13 +330,21 @@ function SettingRow({
 function Toggle({
   value,
   onChange,
+  testID,
+  accessibilityLabel,
 }: {
   value: boolean;
   onChange: (v: boolean) => void;
+  testID?: string;
+  accessibilityLabel?: string;
 }) {
   const { colors, isDark } = useTheme();
   return (
     <Pressable
+      testID={testID}
+      accessibilityRole="switch"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ checked: value }}
       onPress={() => onChange(!value)}
       style={[
         styles.toggle,

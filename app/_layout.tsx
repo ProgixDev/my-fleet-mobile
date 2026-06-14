@@ -17,9 +17,13 @@ import {
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { queryClient } from "@/lib/queryClient";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { usePushRegistration } from "@/hooks/usePushRegistration";
 
 function RootContent() {
   const { colors } = useTheme();
+  // Register for push once the user is authenticated (no-op on simulators).
+  usePushRegistration(useAuthStore((s) => s.isAuthenticated));
 
   return (
     <>

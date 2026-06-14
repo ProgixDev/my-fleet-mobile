@@ -20,6 +20,7 @@
       "icon": "./assets/logo.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Allow My Fleet to use your location to show the pickup point and directions on the map.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSAllowsLocalNetworking": true,
@@ -77,7 +78,14 @@
           "photosPermission": "Allow My Fleet to access your photos to upload your identity documents.",
           "cameraPermission": "Allow My Fleet to access your camera to photograph your identity documents."
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow My Fleet to use your location to show the pickup point and directions on the map."
+        }
+      ],
+      "expo-notifications"
     ],
     "extra": {
       "router": {},

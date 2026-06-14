@@ -107,6 +107,8 @@ export default function PhoneVerifyScreen() {
             activeOpacity={0.7}
             disabled={busy}
             testID="phone-verify-back-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("common.back", { defaultValue: "Back" })}
           >
             <ArrowLeft size={22} color={colors.text} strokeWidth={1.5} />
           </TouchableOpacity>
@@ -131,6 +133,7 @@ export default function PhoneVerifyScreen() {
               autoFocus
               editable={!busy}
               testID="phone-verify-input"
+              accessibilityLabel={t("phoneAuth.codePlaceholder")}
             />
           </View>
 
@@ -153,6 +156,7 @@ export default function PhoneVerifyScreen() {
             style={styles.resendRow}
             activeOpacity={0.7}
             testID="phone-verify-resend-button"
+            accessibilityRole="button"
           >
             <Text
               style={[styles.resendText, resendIn > 0 && styles.resendDisabled]}
@@ -169,6 +173,7 @@ export default function PhoneVerifyScreen() {
             activeOpacity={0.7}
             disabled={busy}
             testID="phone-verify-change-number-button"
+            accessibilityRole="button"
           >
             <Text style={styles.changeText}>{t("phoneAuth.changeNumber")}</Text>
           </TouchableOpacity>
