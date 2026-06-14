@@ -5,15 +5,20 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CheckCircle,
   Camera,
   X,
   Upload,
+  AlertCircle,
 } from "lucide-react-native";
 import Animated, {
   useSharedValue,
@@ -25,25 +30,49 @@ import Animated, {
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
+import { useAgencyStore } from "@/stores/useAgencyStore";
+import {
+  uploadKycDocument,
+  KYC_FIELDS,
+  type KycField,
+} from "@/services/kycService";
 
-interface Uploads {
-  idFront: boolean;
-  idBack: boolean;
-  licenseFront: boolean;
-  licenseBack: boolean;
+// `expo-image-picker` is resolved lazily (require, not a top-level import) so
+// that a native build *without* the ExponentImagePicker module doesn't crash
+// the entire app at boot — Expo Router eagerly evaluates every route module, so
+// a throwing top-level import here would redbox unrelated flows (booking→pay).
+// KYC itself still requires a native build that bundles the module to function.
+type ImagePickerModule = typeof import("expo-image-picker");
+let imagePickerCache: ImagePickerModule | null = null;
+function getImagePicker(): ImagePickerModule {
+  if (!imagePickerCache) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    imagePickerCache = require("expo-image-picker") as ImagePickerModule;
+  }
+  return imagePickerCache;
 }
 
-type UploadKey = keyof Uploads;
+type FieldState =
+  | { status: "empty" }
+  | { status: "uploading"; uri: string }
+  | { status: "uploaded"; uri: string }
+  | { status: "error"; uri: string; message: string };
+
+type Uploads = Record<KycField, FieldState>;
+
+const EMPTY: FieldState = { status: "empty" };
 
 export default function KYCScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const agencyId = useAgencyStore((s) => s.paired?.id ?? null);
   const [step, setStep] = useState(1);
   const [uploads, setUploads] = useState<Uploads>({
-    idFront: false,
-    idBack: false,
-    licenseFront: false,
-    licenseBack: false,
+    idFront: EMPTY,
+    idBack: EMPTY,
+    licenseFront: EMPTY,
+    licenseBack: EMPTY,
   });
 
   const progress = (step / 3) * 100;
@@ -68,14 +97,127 @@ export default function KYCScreen() {
     }
   }, [step, router]);
 
-  const toggleUpload = useCallback(
-    (key: UploadKey) => {
-      setUploads((prev) => ({ ...prev, [key]: !prev[key] }));
+  const runUpload = useCallback(
+    async (key: KycField, uri: string) => {
+      if (!agencyId) {
+        setUploads((prev) => ({
+          ...prev,
+          [key]: {
+            status: "error",
+            uri,
+            message: t("kyc.errors.noAgency", {
+              defaultValue: "No agency paired.",
+            }),
+          },
+        }));
+        return;
+      }
+      setUploads((prev) => ({ ...prev, [key]: { status: "uploading", uri } }));
+      try {
+        await uploadKycDocument(agencyId, key, uri);
+        setUploads((prev) => ({ ...prev, [key]: { status: "uploaded", uri } }));
+        queryClient.invalidateQueries({ queryKey: ["kyc-status"] });
+      } catch (e) {
+        setUploads((prev) => ({
+          ...prev,
+          [key]: {
+            status: "error",
+            uri,
+            message:
+              e instanceof Error
+                ? e.message
+                : t("kyc.errors.uploadFailed", {
+                    defaultValue: "Upload failed. Try again.",
+                  }),
+          },
+        }));
+      }
     },
-    []
+    [agencyId, queryClient, t],
   );
 
-  const allUploaded = Object.values(uploads).every(Boolean);
+  const pickFromLibrary = useCallback(
+    async (key: KycField) => {
+      const perm = await getImagePicker().requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          t("kyc.permission.title", { defaultValue: "Permission required" }),
+          t("kyc.permission.library", {
+            defaultValue: "Allow photo library access to upload your documents.",
+          }),
+        );
+        return;
+      }
+      const result = await getImagePicker().launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets[0]) {
+        await runUpload(key, result.assets[0].uri);
+      }
+    },
+    [runUpload, t],
+  );
+
+  const pickFromCamera = useCallback(
+    async (key: KycField) => {
+      const perm = await getImagePicker().requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          t("kyc.permission.title", { defaultValue: "Permission required" }),
+          t("kyc.permission.camera", {
+            defaultValue: "Allow camera access to photograph your documents.",
+          }),
+        );
+        return;
+      }
+      const result = await getImagePicker().launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets[0]) {
+        await runUpload(key, result.assets[0].uri);
+      }
+    },
+    [runUpload, t],
+  );
+
+  const handlePick = useCallback(
+    (key: KycField) => {
+      Alert.alert(
+        t("kyc.step2.pickTitle", { defaultValue: "Add document" }),
+        undefined,
+        [
+          {
+            text: t("kyc.step2.takePhoto", { defaultValue: "Take a photo" }),
+            onPress: () => {
+              void pickFromCamera(key);
+            },
+          },
+          {
+            text: t("kyc.step2.chooseLibrary", {
+              defaultValue: "Choose from library",
+            }),
+            onPress: () => {
+              void pickFromLibrary(key);
+            },
+          },
+          { text: t("common.cancel"), style: "cancel" },
+        ],
+      );
+    },
+    [pickFromCamera, pickFromLibrary, t],
+  );
+
+  const handleRemove = useCallback((key: KycField) => {
+    setUploads((prev) => ({ ...prev, [key]: EMPTY }));
+  }, []);
+
+  const allUploaded = KYC_FIELDS.every(
+    (f) => uploads[f].status === "uploaded",
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -86,6 +228,7 @@ export default function KYCScreen() {
         {/* Header Row */}
         <View style={styles.headerRow}>
           <TouchableOpacity
+            testID="kyc-back-button"
             onPress={handleBack}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -107,7 +250,8 @@ export default function KYCScreen() {
         {step === 2 && (
           <Step2
             uploads={uploads}
-            onToggle={toggleUpload}
+            onPick={handlePick}
+            onRemove={handleRemove}
             onContinue={handleContinue}
             allUploaded={allUploaded}
           />
@@ -160,11 +304,12 @@ function Step1({
         ))}
       </View>
 
-      <Button fullWidth onPress={onContinue}>
+      <Button fullWidth onPress={onContinue} testID="kyc-start-button">
         {t("kyc.step1.startButton")}
       </Button>
 
       <TouchableOpacity
+        testID="kyc-later-button"
         onPress={onSkip}
         style={styles.skipButton}
         activeOpacity={0.7}
@@ -178,43 +323,79 @@ function Step1({
 /* ─── Step 2: Document Upload ─── */
 
 function UploadBox({
-  uploaded,
+  state,
   label,
   icon,
-  onToggle,
+  testID,
+  onPick,
+  onRemove,
 }: {
-  uploaded: boolean;
+  state: FieldState;
   label: string;
   icon: "camera" | "upload";
-  onToggle: () => void;
+  testID: string;
+  onPick: () => void;
+  onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const IconComponent = icon === "camera" ? Camera : Upload;
+  const hasImage = state.status !== "empty";
 
   return (
     <TouchableOpacity
-      onPress={onToggle}
+      testID={testID}
+      onPress={onPick}
+      disabled={state.status === "uploading"}
       activeOpacity={0.85}
       style={[
         styles.uploadBox,
         {
-          backgroundColor: uploaded ? "#2E1C2B" : "transparent",
-          borderColor: uploaded
-            ? "#4A1942"
-            : "rgba(234, 234, 234, 0.15)",
+          backgroundColor: hasImage ? "#2E1C2B" : "transparent",
+          borderColor:
+            state.status === "error"
+              ? "#E74C3C"
+              : state.status === "uploaded"
+                ? "#4A1942"
+                : "rgba(234, 234, 234, 0.15)",
         },
       ]}
     >
-      {uploaded ? (
+      {hasImage ? (
         <>
-          <CheckCircle size={24} color="#2ECC71" strokeWidth={1.5} />
-          <TouchableOpacity
-            onPress={onToggle}
-            style={styles.removeButton}
-            activeOpacity={0.7}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <X size={14} color="#EAEAEA" strokeWidth={1.5} />
-          </TouchableOpacity>
+          <Image
+            source={{ uri: state.uri }}
+            style={styles.thumbnail}
+            contentFit="cover"
+          />
+          {state.status === "uploading" && (
+            <View style={styles.overlay}>
+              <ActivityIndicator color="#EAEAEA" />
+            </View>
+          )}
+          {state.status === "uploaded" && (
+            <View style={styles.badge}>
+              <CheckCircle size={18} color="#2ECC71" strokeWidth={2} />
+            </View>
+          )}
+          {state.status === "error" && (
+            <View style={[styles.overlay, styles.errorOverlay]}>
+              <AlertCircle size={20} color="#E74C3C" strokeWidth={2} />
+              <Text style={styles.errorText} numberOfLines={2}>
+                {state.message}
+              </Text>
+            </View>
+          )}
+          {state.status !== "uploading" && (
+            <TouchableOpacity
+              testID={`${testID}-remove`}
+              onPress={onRemove}
+              style={styles.removeButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <X size={14} color="#EAEAEA" strokeWidth={1.5} />
+            </TouchableOpacity>
+          )}
         </>
       ) : (
         <>
@@ -224,6 +405,7 @@ function UploadBox({
             strokeWidth={1.5}
           />
           <Text style={styles.uploadLabel}>{label}</Text>
+          <Text style={styles.uploadHint}>{t("kyc.step2.tapToAdd")}</Text>
         </>
       )}
     </TouchableOpacity>
@@ -232,12 +414,14 @@ function UploadBox({
 
 function Step2({
   uploads,
-  onToggle,
+  onPick,
+  onRemove,
   onContinue,
   allUploaded,
 }: {
   uploads: Uploads;
-  onToggle: (key: UploadKey) => void;
+  onPick: (key: KycField) => void;
+  onRemove: (key: KycField) => void;
   onContinue: () => void;
   allUploaded: boolean;
 }) {
@@ -254,16 +438,20 @@ function Step2({
         <Text style={styles.uploadSectionLabel}>{t("kyc.step2.idCardLabel")}</Text>
         <View style={styles.uploadGrid}>
           <UploadBox
-            uploaded={uploads.idFront}
+            testID="kyc-upload-id-front"
+            state={uploads.idFront}
             label={t("kyc.step2.front")}
             icon="camera"
-            onToggle={() => onToggle("idFront")}
+            onPick={() => onPick("idFront")}
+            onRemove={() => onRemove("idFront")}
           />
           <UploadBox
-            uploaded={uploads.idBack}
+            testID="kyc-upload-id-back"
+            state={uploads.idBack}
             label={t("kyc.step2.back")}
             icon="camera"
-            onToggle={() => onToggle("idBack")}
+            onPick={() => onPick("idBack")}
+            onRemove={() => onRemove("idBack")}
           />
         </View>
       </View>
@@ -273,16 +461,20 @@ function Step2({
         <Text style={styles.uploadSectionLabel}>{t("kyc.step2.licenseLabel")}</Text>
         <View style={styles.uploadGrid}>
           <UploadBox
-            uploaded={uploads.licenseFront}
+            testID="kyc-upload-license-front"
+            state={uploads.licenseFront}
             label={t("kyc.step2.front")}
             icon="upload"
-            onToggle={() => onToggle("licenseFront")}
+            onPick={() => onPick("licenseFront")}
+            onRemove={() => onRemove("licenseFront")}
           />
           <UploadBox
-            uploaded={uploads.licenseBack}
+            testID="kyc-upload-license-back"
+            state={uploads.licenseBack}
             label={t("kyc.step2.back")}
             icon="upload"
-            onToggle={() => onToggle("licenseBack")}
+            onPick={() => onPick("licenseBack")}
+            onRemove={() => onRemove("licenseBack")}
           />
         </View>
       </View>
@@ -294,7 +486,12 @@ function Step2({
         </Text>
       </View>
 
-      <Button fullWidth onPress={onContinue} disabled={!allUploaded}>
+      <Button
+        fullWidth
+        onPress={onContinue}
+        disabled={!allUploaded}
+        testID="kyc-step2-continue"
+      >
         {t("common.continue")}
       </Button>
     </>
@@ -350,7 +547,7 @@ function Step3({ onContinue }: { onContinue: () => void }) {
         </View>
       </View>
 
-      <Button fullWidth onPress={onContinue}>
+      <Button fullWidth onPress={onContinue} testID="kyc-step3-home-button">
         {t("kyc.step3.homeButton")}
       </Button>
     </>
@@ -480,12 +677,51 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     position: "relative",
+    overflow: "hidden",
   },
   uploadLabel: {
     fontFamily: "Poppins_400Regular",
     fontSize: 11,
     color: "rgba(234, 234, 234, 0.5)",
     textAlign: "center",
+  },
+  uploadHint: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 10,
+    color: "rgba(234, 234, 234, 0.35)",
+    textAlign: "center",
+  },
+  thumbnail: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 14,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(5, 4, 4, 0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+  },
+  errorOverlay: {
+    backgroundColor: "rgba(5, 4, 4, 0.78)",
+  },
+  errorText: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 10,
+    color: "#E74C3C",
+    textAlign: "center",
+  },
+  badge: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(5, 4, 4, 0.7)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   removeButton: {
     position: "absolute",
@@ -494,7 +730,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(234, 234, 234, 0.2)",
+    backgroundColor: "rgba(5, 4, 4, 0.7)",
     alignItems: "center",
     justifyContent: "center",
   },

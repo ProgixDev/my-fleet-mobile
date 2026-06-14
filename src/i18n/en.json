@@ -141,7 +141,20 @@
       "licenseLabel": "Driver's license",
       "front": "Front",
       "back": "Back",
+      "tapToAdd": "Tap to add",
+      "pickTitle": "Add document",
+      "takePhoto": "Take a photo",
+      "chooseLibrary": "Choose from library",
       "tip": "💡 Make sure the photo is sharp, well-lit and all text is readable"
+    },
+    "permission": {
+      "title": "Permission required",
+      "camera": "Allow camera access to photograph your documents.",
+      "library": "Allow photo library access to upload your documents."
+    },
+    "errors": {
+      "noAgency": "No agency paired. Scan your agency's QR code first.",
+      "uploadFailed": "Upload failed. Please try again."
     },
     "step3": {
       "title": "Verification in progress",
@@ -352,6 +365,8 @@
       "valueEuro": "€{{value}}"
     },
     "continueToPayment": "Continue to payment",
+    "errorTitle": "Error",
+    "errorGeneric": "Could not create the booking. Please try again later.",
     "calendarModalTitle": "Pick dates",
     "calendarStart": "Start",
     "calendarEnd": "End",
@@ -370,7 +385,11 @@
     "addCard": "+ Add a card",
     "securePayment": "Secure payment",
     "guaranteed": "Guaranteed protection",
-    "confirmPay": "Confirm and pay — €{{amount}}"
+    "confirmPay": "Confirm and pay — €{{amount}}",
+    "errorTitle": "Error",
+    "missingBooking": "Booking not found. Please start again from your bookings.",
+    "missingAgency": "No agency linked to your account.",
+    "errorGeneric": "Couldn't start the payment. Please try again later."
   },
   "confirmation": {
     "stepLabel": "{{current}}/{{total}}",
@@ -547,6 +566,8 @@
     "idFront": "ID card — front",
     "idBack": "ID card — back",
     "license": "Driver's license",
+    "licenseFront": "Driver's license — front",
+    "licenseBack": "Driver's license — back",
     "proofAddress": "Proof of address",
     "addressTitle": "Full address",
     "addressValue": "14 Rue de France, 06000 Nice",
@@ -555,7 +576,8 @@
     "statusPending": "Pending",
     "statusMissing": "Missing",
     "replace": "Replace",
-    "upload": "Upload"
+    "upload": "Upload",
+    "loadError": "Could not load your documents. Pull to retry."
   },
   "help": {
     "title": "Help center",

@@ -43,6 +43,18 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "myfleet"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {
@@ -57,6 +69,13 @@
         "expo-camera",
         {
           "cameraPermission": "Allow My Fleet to access your camera to scan agency QR codes."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow My Fleet to access your photos to upload your identity documents.",
+          "cameraPermission": "Allow My Fleet to access your camera to photograph your identity documents."
         }
       ]
     ],

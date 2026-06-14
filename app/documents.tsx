@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import {
   Camera,
@@ -7,29 +8,30 @@ import {
   AlertCircle,
   ChevronRight,
   FileText,
-  MapPin,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
+import { useKycStatus } from "@/hooks/useKyc";
+import { KYC_FIELDS, type KycField } from "@/services/kycService";
 
+// Per-document status is binary in Phase 1 (uploaded vs missing). Verification
+// is relation-level (agency_client.verified_at) and not surfaced per document,
+// so an uploaded doc shows as "pending" (awaiting agency review).
 type Status = "verified" | "pending" | "missing";
 
-interface DocumentItem {
-  id: string;
-  labelKey: string;
-  status: Status;
-}
-
-const documents: DocumentItem[] = [
-  { id: "id-front", labelKey: "documents.idFront", status: "verified" },
-  { id: "id-back", labelKey: "documents.idBack", status: "verified" },
-  { id: "license", labelKey: "documents.license", status: "pending" },
-];
+const FIELD_LABEL_KEYS: Record<KycField, string> = {
+  idFront: "documents.idFront",
+  idBack: "documents.idBack",
+  licenseFront: "documents.licenseFront",
+  licenseBack: "documents.licenseBack",
+};
 
 export default function DocumentsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { colors, isDark } = useTheme();
+  const { data: kyc, isLoading, isError } = useKycStatus();
 
   const statusMeta: Record<
     Status,
@@ -55,98 +57,98 @@ export default function DocumentsScreen() {
     },
   };
 
+  const rows = KYC_FIELDS.map((field) => {
+    const fieldStatus = kyc?.fields[field] ?? "missing";
+    const status: Status = fieldStatus === "uploaded" ? "pending" : "missing";
+    return { id: field, labelKey: FIELD_LABEL_KEYS[field], status };
+  });
+
   return (
     <ScreenContainer
       title={t("documents.title")}
       subtitle={t("documents.subtitle")}
     >
-      <View style={{ gap: 10, marginTop: 6 }}>
-        {documents.map((doc) => {
-          const meta = statusMeta[doc.status];
-          const Icon = meta.Icon;
-          return (
-            <Pressable
-              key={doc.id}
-              style={[
-                styles.row,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <View
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : isError ? (
+        <View style={styles.centered}>
+          <Text style={[styles.errorText, { color: colors.error }]}>
+            {t("documents.loadError")}
+          </Text>
+        </View>
+      ) : (
+        <View style={{ gap: 10, marginTop: 6 }}>
+          {rows.map((doc) => {
+            const meta = statusMeta[doc.status];
+            const Icon = meta.Icon;
+            return (
+              <Pressable
+                key={doc.id}
+                testID={`documents-row-${doc.id}`}
+                onPress={() => router.push("/kyc")}
                 style={[
-                  styles.thumb,
-                  { backgroundColor: isDark ? "rgba(74, 25, 66, 0.25)" : "rgba(74, 25, 66, 0.08)" },
+                  styles.row,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
                 ]}
               >
-                <FileText size={20} color={colors.primary} strokeWidth={1.6} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.label, { color: colors.text }]}>
-                  {t(doc.labelKey)}
-                </Text>
-                <View style={[styles.statusChip, { backgroundColor: meta.bg }]}>
-                  <Icon size={11} color={meta.color} strokeWidth={2} />
-                  <Text style={[styles.statusText, { color: meta.color }]}>
-                    {t(meta.labelKey)}
-                  </Text>
-                </View>
-              </View>
-              {doc.status === "missing" ? (
                 <View
                   style={[
-                    styles.cta,
-                    { backgroundColor: colors.primary },
+                    styles.thumb,
+                    { backgroundColor: isDark ? "rgba(74, 25, 66, 0.25)" : "rgba(74, 25, 66, 0.08)" },
                   ]}
                 >
-                  <Camera size={12} color="#FFFFFF" strokeWidth={2} />
-                  <Text style={styles.ctaText}>{t("documents.upload")}</Text>
+                  <FileText size={20} color={colors.primary} strokeWidth={1.6} />
                 </View>
-              ) : (
-                <ChevronRight
-                  size={18}
-                  color={colors.textSecondary}
-                  strokeWidth={1.5}
-                />
-              )}
-            </Pressable>
-          );
-        })}
-
-        <View
-          style={[
-            styles.row,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <View
-            style={[
-              styles.thumb,
-              { backgroundColor: isDark ? "rgba(46, 204, 113, 0.16)" : "rgba(46, 204, 113, 0.1)" },
-            ]}
-          >
-            <MapPin size={20} color="#2ECC71" strokeWidth={1.8} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              {t("documents.addressTitle")}
-            </Text>
-            <Text style={[styles.addressText, { color: colors.textSecondary }]}>
-              {t("documents.addressValue")}
-            </Text>
-          </View>
-          <View style={[styles.statusChip, { backgroundColor: "rgba(46, 204, 113, 0.14)" }]}>
-            <CheckCircle2 size={11} color="#2ECC71" strokeWidth={2} />
-            <Text style={[styles.statusText, { color: "#2ECC71" }]}>
-              {t("documents.addressStatus")}
-            </Text>
-          </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, { color: colors.text }]}>
+                    {t(doc.labelKey)}
+                  </Text>
+                  <View style={[styles.statusChip, { backgroundColor: meta.bg }]}>
+                    <Icon size={11} color={meta.color} strokeWidth={2} />
+                    <Text style={[styles.statusText, { color: meta.color }]}>
+                      {t(meta.labelKey)}
+                    </Text>
+                  </View>
+                </View>
+                {doc.status === "missing" ? (
+                  <View
+                    style={[
+                      styles.cta,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    <Camera size={12} color="#FFFFFF" strokeWidth={2} />
+                    <Text style={styles.ctaText}>{t("documents.upload")}</Text>
+                  </View>
+                ) : (
+                  <ChevronRight
+                    size={18}
+                    color={colors.textSecondary}
+                    strokeWidth={1.5}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
         </View>
-      </View>
+      )}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  centered: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorText: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 13,
+    textAlign: "center",
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -180,11 +182,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_500Medium",
     fontSize: 10.5,
     letterSpacing: 0.2,
-  },
-  addressText: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 12,
-    lineHeight: 18,
   },
   cta: {
     flexDirection: "row",
