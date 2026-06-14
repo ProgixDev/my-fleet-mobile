@@ -8,25 +8,28 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // "Deep Plum" dark theme — kept in sync with src/context/ThemeContext.tsx
         bg: {
-          primary: "#050404",
+          primary: "#160B14",
         },
-        surface: "#2E1C2B",
+        surface: "#241320",
+        surface2: "#332030",
         accent: {
           DEFAULT: "#4A1942",
+          violet: "#A855F7",
           gradient: {
-            start: "#2E1C2B",
-            end: "#4A1942",
+            start: "#4A1942",
+            end: "#7C3AED",
           },
         },
         text: {
-          primary: "#EAEAEA",
-          secondary: "rgba(234, 234, 234, 0.6)",
-          muted: "rgba(234, 234, 234, 0.4)",
+          primary: "#F3EEF2",
+          secondary: "#C9B8C4",
+          muted: "#9A8693",
         },
         border: {
-          DEFAULT: "rgba(234, 234, 234, 0.1)",
-          focus: "#4A1942",
+          DEFAULT: "#3A2435",
+          focus: "#A855F7",
         },
         success: "#2ECC71",
         warning: "#F39C12",

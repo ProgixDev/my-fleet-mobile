@@ -28,6 +28,7 @@ import {
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAgencies, useAgencyVehicles } from "@/hooks/useAgencies";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import { centsToUnits } from "@/utils/money";
 
@@ -223,6 +224,7 @@ interface SearchResult {
 
 export default function SearchScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -358,7 +360,7 @@ export default function SearchScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* ─── Header ─── */}
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={goBack} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <ArrowLeft size={24} color="#EAEAEA" strokeWidth={1.5} />
           </TouchableOpacity>
           <View style={styles.searchInputWrapper}>

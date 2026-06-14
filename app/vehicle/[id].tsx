@@ -30,6 +30,7 @@ import type { LucideIcon } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 import { useTheme } from "@/context/ThemeContext";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { useVehicleDetail } from "@/hooks/useAgencyFleet";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 
@@ -45,6 +46,7 @@ interface Spec {
 
 export default function VehicleDetailScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -83,7 +85,7 @@ export default function VehicleDetailScreen() {
           {t("vehicle.errorLoading")}
         </Text>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           style={[styles.backCta, { backgroundColor: colors.primary }]}
           activeOpacity={0.85}
         >
@@ -173,7 +175,7 @@ export default function VehicleDetailScreen() {
 
           <SafeAreaView style={styles.heroNavRow} edges={["top"]}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={goBack}
               style={styles.heroBtn}
               activeOpacity={0.7}
             >

@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   PhoneOff,
@@ -24,6 +24,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { useBookingDetail } from "@/hooks/useBookings";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -92,7 +93,7 @@ function PulseRings() {
 }
 
 export default function CallScreen() {
-  const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isMuted, setIsMuted] = useState(false);
@@ -193,7 +194,7 @@ export default function CallScreen() {
           <TouchableOpacity
             style={styles.endCallBtn}
             activeOpacity={0.7}
-            onPress={() => router.back()}
+            onPress={goBack}
           >
             <PhoneOff size={28} color="#EAEAEA" strokeWidth={1.5} />
           </TouchableOpacity>

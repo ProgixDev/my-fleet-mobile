@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -57,6 +58,7 @@ function parseQrPayload(raw: string): string | null {
 
 export default function ScanScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [flashOn, setFlashOn] = useState(false);
@@ -207,7 +209,7 @@ export default function ScanScreen() {
             onAction={
               permission.canAskAgain
                 ? () => requestPermission()
-                : () => router.back()
+                : goBack
             }
           />
         </SafeAreaView>

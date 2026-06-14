@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Linking,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ArrowLeft, Lock, Shield } from "lucide-react-native";
@@ -17,9 +17,10 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import { createCheckoutSession } from "@/services/bookingService";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 export default function PaymentScreen() {
-  const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
@@ -93,7 +94,7 @@ export default function PaymentScreen() {
               testID="payment-back-button"
               accessibilityRole="button"
               accessibilityLabel={t("common.back", { defaultValue: "Retour" })}
-              onPress={() => router.back()}
+              onPress={goBack}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

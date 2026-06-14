@@ -25,6 +25,7 @@ import { useTranslation } from "react-i18next";
 
 import { useTheme } from "@/context/ThemeContext";
 import { useBookingDetail } from "@/hooks/useBookings";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 type VehicleFinalState = "ok" | "minor-damage" | "major-damage";
 
@@ -86,6 +87,7 @@ function formatDate(iso: string): string {
 
 export default function BookingSummaryScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
@@ -103,7 +105,7 @@ export default function BookingSummaryScreen() {
             {t("bookingSummary.notFound")}
           </Text>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             style={[styles.backPill, { backgroundColor: colors.primary }]}
           >
             <Text style={[styles.backPillText, { color: "#EAEAEA" }]}>
@@ -155,7 +157,7 @@ export default function BookingSummaryScreen() {
           style={styles.headerRow}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             style={[
               styles.iconButton,
               {

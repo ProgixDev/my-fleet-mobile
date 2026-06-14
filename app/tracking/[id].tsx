@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   View,
   Text,
   TouchableOpacity,
@@ -8,15 +7,12 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
 import * as Location from "expo-location";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_DEFAULT, type Region } from "react-native-maps";
 import {
   ArrowLeft,
-  FileText,
   MapPin,
   MessageCircle,
 } from "lucide-react-native";
@@ -33,6 +29,7 @@ import { useBookingDetail } from "@/hooks/useBookings";
 import { useAgency } from "@/hooks/useAgencies";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import { useTheme } from "@/context/ThemeContext";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 const MAP_HEIGHT = 380;
 
@@ -214,195 +211,13 @@ const timelineSteps: TimelineStep[] = [
   { statusKey: "tracking.timeline.delivered", timeKey: "", completed: false, active: false },
 ];
 
-function escapeHtml(value: string | number | undefined): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function formatContractDate(date: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-interface ContractBooking {
-  id: string;
-  vehicleName: string;
-  reference: string;
-  startDate: string;
-  endDate: string;
-  startTime: string;
-  endTime: string;
-  total: number;
-  includedKm?: number;
-  extraKmRate?: number;
-  pickupMethod?: string;
-  deliveryAddress?: string;
-}
-
-function buildContractHtml({
-  booking,
-  agencyName,
-}: {
-  booking: ContractBooking;
-  agencyName: string;
-}) {
-  const vehicleName = booking.vehicleName || "Véhicule";
-  const deposit = "Selon conditions agence";
-  const includedKm = booking.includedKm
-    ? `${booking.includedKm} km`
-    : "Selon conditions agence";
-
-  return `
-    <!DOCTYPE html>
-    <html lang="fr">
-      <head>
-        <meta charset="utf-8" />
-        <style>
-          body {
-            margin: 0;
-            padding: 32px;
-            color: #141014;
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-          }
-          .header {
-            border-bottom: 3px solid #4A1942;
-            padding-bottom: 18px;
-            margin-bottom: 24px;
-          }
-          .brand {
-            color: #4A1942;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-          }
-          h1 {
-            margin: 8px 0 6px;
-            font-size: 28px;
-          }
-          .reference {
-            color: #666;
-            font-size: 13px;
-          }
-          .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 20px;
-          }
-          .box {
-            border: 1px solid #E5DCE3;
-            border-radius: 12px;
-            padding: 16px;
-          }
-          .label {
-            color: #6D5B68;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.6px;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-          }
-          .value {
-            font-size: 16px;
-            font-weight: 700;
-          }
-          .muted {
-            color: #6D5B68;
-            font-size: 13px;
-            margin-top: 4px;
-          }
-          table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 8px 0 22px;
-          }
-          td {
-            border-bottom: 1px solid #EFE8ED;
-            padding: 10px 0;
-            font-size: 14px;
-          }
-          td:last-child {
-            font-weight: 700;
-            text-align: right;
-          }
-          .terms {
-            color: #4B3B47;
-            font-size: 12px;
-            line-height: 1.55;
-          }
-          .signatureGrid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-            margin-top: 32px;
-          }
-          .signature {
-            border-top: 1px solid #141014;
-            padding-top: 8px;
-            color: #6D5B68;
-            font-size: 12px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="brand">My Fleet</div>
-          <h1>Contrat de location</h1>
-          <div class="reference">Référence réservation : ${escapeHtml(booking.reference)}</div>
-        </div>
-
-        <div class="grid">
-          <div class="box">
-            <div class="label">Loueur</div>
-            <div class="value">${escapeHtml(agencyName)}</div>
-            <div class="muted">Agence partenaire My Fleet</div>
-          </div>
-          <div class="box">
-            <div class="label">Locataire</div>
-            <div class="value">Client My Fleet</div>
-            <div class="muted">Profil vérifié dans l'application</div>
-          </div>
-        </div>
-
-        <table>
-          <tr><td>Véhicule</td><td>${escapeHtml(vehicleName)}</td></tr>
-          <tr><td>Période</td><td>${escapeHtml(formatContractDate(booking.startDate))} - ${escapeHtml(formatContractDate(booking.endDate))}</td></tr>
-          <tr><td>Horaires</td><td>${escapeHtml(booking.startTime)} - ${escapeHtml(booking.endTime)}</td></tr>
-          <tr><td>Mode de retrait</td><td>${escapeHtml(booking.pickupMethod === "delivery" ? "Livraison" : "Agence")}</td></tr>
-          <tr><td>Adresse de livraison</td><td>${escapeHtml(booking.deliveryAddress || "Retrait en agence")}</td></tr>
-          <tr><td>Kilométrage inclus</td><td>${escapeHtml(includedKm)}</td></tr>
-          <tr><td>Caution</td><td>${escapeHtml(deposit)}</td></tr>
-          <tr><td>Total réservation</td><td>${escapeHtml(booking.total.toLocaleString("fr-FR"))} €</td></tr>
-        </table>
-
-        <div class="terms">
-          Ce document récapitule les éléments principaux de la location. Le véhicule doit être utilisé conformément aux conditions générales de l'agence, avec restitution dans l'état constaté au départ. Les frais additionnels éventuels restent dus en cas de dépassement kilométrique, retard, carburant manquant, dommage ou contravention.
-        </div>
-
-        <div class="signatureGrid">
-          <div class="signature">Signature du client</div>
-          <div class="signature">Signature de l'agence</div>
-        </div>
-      </body>
-    </html>
-  `;
-}
-
 /* ─── Main Screen ─── */
 export default function TrackingScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
-  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
 
   const { data: booking } = useBookingDetail(id);
   const pairedAgency = useAgencyStore((s) => s.paired);
@@ -419,43 +234,6 @@ export default function TrackingScreen() {
       .filter((part): part is string => !!part && part.trim().length > 0)
       .join(", ") || undefined;
 
-  const handleGenerateContract = async () => {
-    if (!booking) {
-      Alert.alert(
-        t("tracking.contract.errorTitle"),
-        t("tracking.contract.errorMessage")
-      );
-      return;
-    }
-
-    try {
-      setIsGeneratingContract(true);
-      const html = buildContractHtml({ booking, agencyName });
-      const { uri } = await Print.printToFileAsync({ html });
-      const canShare = await Sharing.isAvailableAsync();
-
-      if (canShare) {
-        await Sharing.shareAsync(uri, {
-          dialogTitle: t("tracking.contract.shareTitle"),
-          mimeType: "application/pdf",
-          UTI: "com.adobe.pdf",
-        });
-      } else {
-        Alert.alert(
-          t("tracking.contract.generatedTitle"),
-          t("tracking.contract.generatedMessage")
-        );
-      }
-    } catch {
-      Alert.alert(
-        t("tracking.contract.errorTitle"),
-        t("tracking.contract.errorMessage")
-      );
-    } finally {
-      setIsGeneratingContract(false);
-    }
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ─── Map Section ─── */}
@@ -465,7 +243,7 @@ export default function TrackingScreen() {
         <SafeAreaView style={styles.mapBackRow} edges={["top"]}>
           <TouchableOpacity
             testID="tracking-back-button"
-            onPress={() => router.back()}
+            onPress={goBack}
             style={styles.mapBtn}
             activeOpacity={0.7}
           >
@@ -532,35 +310,6 @@ export default function TrackingScreen() {
               {t("tracking.etaLabel")}
             </Text>
           </View>
-
-          {/* Contract CTA */}
-          <TouchableOpacity
-            style={[
-              styles.contractButton,
-              {
-                backgroundColor: isDark ? "rgba(74,25,66,0.32)" : "rgba(74,25,66,0.08)",
-                borderColor: colors.border,
-                opacity: isGeneratingContract ? 0.7 : 1,
-              },
-            ]}
-            activeOpacity={0.86}
-            disabled={isGeneratingContract}
-            onPress={handleGenerateContract}
-          >
-            <View style={[styles.contractIconBox, { backgroundColor: colors.primary }]}>
-              <FileText size={18} color="#FFFFFF" strokeWidth={1.8} />
-            </View>
-            <View style={styles.contractTextBlock}>
-              <Text style={[styles.contractTitle, { color: colors.text }]}>
-                {isGeneratingContract
-                  ? t("tracking.contract.generating")
-                  : t("tracking.contract.title")}
-              </Text>
-              <Text style={[styles.contractSubtitle, { color: colors.textSecondary }]}>
-                {t("tracking.contract.subtitle")}
-              </Text>
-            </View>
-          </TouchableOpacity>
 
           {/* Driver Card */}
           <View
@@ -739,41 +488,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
     fontSize: 13,
     color: "rgba(234, 234, 234, 0.6)",
-  },
-
-  /* Contract CTA */
-  contractButton: {
-    minHeight: 58,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  contractIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  contractTextBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  contractTitle: {
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 14,
-    color: "#EAEAEA",
-  },
-  contractSubtitle: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 12,
-    color: "rgba(234, 234, 234, 0.6)",
-    marginTop: 2,
   },
 
   /* Driver Card */

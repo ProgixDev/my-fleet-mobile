@@ -21,6 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useNotifications, useMarkRead, useMarkAllRead } from "@/hooks/useNotifications";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import type { ServerNotification } from "@/services/notificationService";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -62,6 +63,7 @@ function notifRoute(n: ServerNotification): string | null {
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
   const markRead = useMarkRead();
@@ -76,7 +78,7 @@ export default function NotificationsScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
