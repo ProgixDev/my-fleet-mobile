@@ -15,7 +15,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeft, Send, Paperclip, Phone, Check, CheckCheck } from "lucide-react-native";
+import { ArrowLeft, Send, Phone, CheckCheck } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useBookingDetail } from "@/hooks/useBookings";
 import { useMessages, usePostMessage } from "@/hooks/useMessages";
@@ -234,14 +234,9 @@ export default function MessagerieScreen() {
             { paddingBottom: Math.max(insets.bottom, 12) },
           ]}
         >
+          {/* NOTE: attachment (Paperclip) button removed — the message
+              endpoint only accepts text, so there is no attachment support. */}
           <View style={styles.inputRow}>
-            <Pressable style={styles.attachBtn} hitSlop={8}>
-              <Paperclip
-                size={19}
-                color={colors.textSecondary}
-                strokeWidth={1.8}
-              />
-            </Pressable>
             <TextInput
               value={message}
               onChangeText={setMessage}
@@ -440,7 +435,6 @@ function makeStyles(
       borderWidth: 1,
       borderColor: colors.border,
     },
-    attachBtn: { paddingVertical: 2 },
     input: {
       flex: 1,
       fontFamily: "Poppins_400Regular",

@@ -199,17 +199,44 @@ function PulsingDot({ color }: { color: string }) {
 /* ─── Timeline steps ─── */
 interface TimelineStep {
   statusKey: string;
-  timeKey: string;
   completed: boolean;
   active: boolean;
 }
 
-const timelineSteps: TimelineStep[] = [
-  { statusKey: "tracking.timeline.confirmed", timeKey: "tracking.timeline.confirmedTime", completed: true, active: false },
-  { statusKey: "tracking.timeline.preparing", timeKey: "tracking.timeline.preparingTime", completed: true, active: false },
-  { statusKey: "tracking.timeline.enRoute", timeKey: "tracking.timeline.enRouteTime", completed: false, active: true },
-  { statusKey: "tracking.timeline.delivered", timeKey: "", completed: false, active: false },
+// The four ordered booking phases shown in the timeline. The adapted booking
+// status (`adaptServerBooking`) collapses to confirmed/active/completed, but we
+// also tolerate "pending" defensively in case a raw status reaches here.
+type BookingPhase = "pending" | "confirmed" | "active" | "completed";
+
+const TIMELINE_STEP_KEYS: { statusKey: string; phase: BookingPhase }[] = [
+  { statusKey: "tracking.timeline.confirmed", phase: "confirmed" },
+  { statusKey: "tracking.timeline.preparing", phase: "active" },
+  { statusKey: "tracking.timeline.enRoute", phase: "active" },
+  { statusKey: "tracking.timeline.delivered", phase: "completed" },
 ];
+
+// Derive timeline step states from the real booking status instead of a
+// hardcoded constant. `pending` → nothing done yet; `confirmed` → first step
+// done, preparing current; `active` → vehicle in use (en route current);
+// `completed` → all steps done.
+function deriveTimelineSteps(
+  status: BookingPhase | undefined,
+): TimelineStep[] {
+  // Index of the "current" step for each status (the step the booking is at).
+  const currentIndexByStatus: Record<BookingPhase, number> = {
+    pending: 0, // awaiting confirmation — first step is the current one
+    confirmed: 1, // confirmed → preparing is now current
+    active: 2, // vehicle handed over / en route is current
+    completed: 4, // everything done, no current step
+  };
+  const currentIndex = currentIndexByStatus[status ?? "confirmed"];
+
+  return TIMELINE_STEP_KEYS.map((step, index) => ({
+    statusKey: step.statusKey,
+    completed: index < currentIndex,
+    active: index === currentIndex,
+  }));
+}
 
 /* ─── Main Screen ─── */
 export default function TrackingScreen() {
@@ -227,6 +254,24 @@ export default function TrackingScreen() {
   const resolvedAgency = agency ?? pairedAgency;
   const agencyLogo = "P";
   const agencyName = booking?.agencyName || t("tracking.fallbackAgency");
+
+  // Drive the timeline from the real booking status (no hardcoded steps).
+  const timelineSteps = deriveTimelineSteps(booking?.status);
+
+  // Real pickup date/time from the booking (replaces the fake "15 min" ETA).
+  // Formats the ISO start date in the active locale; falls back to the raw
+  // string if it is not a parseable date.
+  const startDateLabel = (() => {
+    if (!booking?.startDate) return null;
+    const d = new Date(booking.startDate);
+    if (Number.isNaN(d.getTime())) return booking.startDate;
+    return d.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  })();
+  const startTimeLabel = booking?.startTime;
 
   // Build the pickup address to geocode: street + city when available.
   const pickupAddress =
@@ -291,25 +336,25 @@ export default function TrackingScreen() {
                   <Text style={[styles.timelineStatus, { color: colors.text }]}>
                     {t(step.statusKey)}
                   </Text>
-                  {step.timeKey !== "" && (
-                    <Text style={[styles.timelineTime, { color: colors.textSecondary }]}>
-                      {t(step.timeKey)}
-                    </Text>
-                  )}
                 </View>
               </View>
             ))}
           </View>
 
-          {/* ETA */}
-          <View style={styles.etaBlock}>
-            <Text style={[styles.etaValue, { color: colors.text }]}>
-              {t("tracking.etaValue")}
-            </Text>
-            <Text style={[styles.etaLabel, { color: colors.textSecondary }]}>
-              {t("tracking.etaLabel")}
-            </Text>
-          </View>
+          {/* Real pickup date/time (replaces the former fake "15 min" ETA —
+              there is no live GPS/delivery ETA in this build). */}
+          {startDateLabel && (
+            <View style={styles.etaBlock}>
+              <Text style={[styles.etaValue, { color: colors.text }]}>
+                {startTimeLabel
+                  ? `${startDateLabel} · ${startTimeLabel}`
+                  : startDateLabel}
+              </Text>
+              <Text style={[styles.etaLabel, { color: colors.textSecondary }]}>
+                {t("tracking.pickupLabel")}
+              </Text>
+            </View>
+          )}
 
           {/* Driver Card */}
           <View
@@ -468,11 +513,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#EAEAEA",
   },
-  timelineTime: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 12,
-    color: "rgba(234, 234, 234, 0.6)",
-  },
 
   /* ETA */
   etaBlock: {
@@ -481,8 +521,9 @@ const styles = StyleSheet.create({
   },
   etaValue: {
     fontFamily: "Poppins_700Bold",
-    fontSize: 28,
+    fontSize: 20,
     color: "#EAEAEA",
+    textAlign: "center",
   },
   etaLabel: {
     fontFamily: "Poppins_400Regular",
