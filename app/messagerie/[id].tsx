@@ -182,10 +182,9 @@ export default function MessagerieScreen() {
 
         <Pressable
           onPress={async () => {
-            // Try to dial the agency directly via the OS phone dialer.
-            // Fall back to the in-app call screen if no number is available.
-            // For now booking doesn't expose the agency phone — keep the
-            // mock-UI behaviour but make sure it's intentional.
+            // Dial the agency directly via the OS phone dialer using the
+            // hydrated agency phone (from the booking). Fall back to an alert
+            // when the agency has no number on file.
             const phone = (booking as { agencyPhone?: string } | undefined)
               ?.agencyPhone;
             if (phone) {

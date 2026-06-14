@@ -379,6 +379,7 @@
     "title": "Paiement",
     "stepLabel": "{{current}}/{{total}}",
     "methodTitle": "Moyen de paiement",
+    "checkoutNote": "Le paiement s'effectue de manière sécurisée via Stripe. Vous saisirez votre carte à l'étape suivante.",
     "cardNumber": "**** **** **** 4242",
     "cardExpiry": "Exp: 09/27",
     "cardBrand": "VISA",

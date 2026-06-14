@@ -45,24 +45,11 @@ function daysBetween(a: Date, b: Date) { return Math.round((b.getTime() - a.getT
 function isSameDay(a: Date, b: Date) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
 function isBetween(d: Date, s: Date, e: Date) { return d.getTime() > s.getTime() && d.getTime() < e.getTime(); }
 
-// Simulate unavailability: vehicles with even IDs are unavailable for certain date ranges
-function isVehicleUnavailable(vehicleId: string, start: Date, end: Date): boolean {
-  const id = Number(vehicleId);
-  // IDs 2 and 5 unavailable for June dates
-  if ((id === 2 || id === 5) && start.getMonth() === 5) return true;
-  // ID 4 unavailable if rental > 4 days
-  if (id === 4 && daysBetween(start, end) > 4) return true;
-  return false;
-}
-
-function getUnavailabilityReasonKey(vehicleId: string, start: Date, end: Date): string {
-  const id = Number(vehicleId);
-  if ((id === 2 || id === 5) && start.getMonth() === 5) return "search.unavailableJune";
-  if (id === 4 && daysBetween(start, end) > 4) return "search.unavailableMaxDays";
-  return "";
-}
-
-const initialRecentSearches = ["Porsche 911", "Monaco Premium Fleet", "SUV Nice"];
+// Recent searches start empty; real entries are appended as the user searches.
+// (No fake seed data — the previous hardcoded list and the dead
+// "simulate unavailability" helpers keyed off Number(uuid) were removed since
+// the public catalog has no availability signal yet.)
+const initialRecentSearches: string[] = [];
 
 interface PopularCategory { nameKey: string; icon: string; filter: string; }
 const popularCategories: PopularCategory[] = [

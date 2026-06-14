@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
-import { CreditCard, Plus, Trash2 } from "lucide-react-native";
+import { CreditCard, Trash2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
@@ -39,19 +39,6 @@ export default function PaymentMethodsScreen() {
           onPress: () => deleteCard.mutate(id),
         },
       ],
-    );
-  };
-
-  const handleAddCard = () => {
-    // Stripe Payment Sheet doit être utilisé pour ajouter une carte —
-    // l'intégration native @stripe/stripe-react-native sera branchée
-    // ultérieurement. Pour l'instant un placeholder lisible.
-    Alert.alert(
-      t("paymentMethods.addCard"),
-      t("paymentMethods.addCardComingSoon", {
-        defaultValue:
-          "L'ajout d'une carte sera disponible lorsque Stripe Payment Sheet sera activé.",
-      }),
     );
   };
 
@@ -146,19 +133,9 @@ export default function PaymentMethodsScreen() {
             </View>
           ))
         )}
-
-        <Pressable
-          onPress={handleAddCard}
-          style={[
-            styles.addButton,
-            { backgroundColor: colors.surface, borderColor: colors.primary },
-          ]}
-        >
-          <Plus size={18} color={colors.primary} strokeWidth={2} />
-          <Text style={[styles.addText, { color: colors.primary }]}>
-            {t("paymentMethods.addCard")}
-          </Text>
-        </Pressable>
+        {/* "Add card" is intentionally hidden for v1.0: payment is collected in
+            Stripe Checkout (card entered in-browser per booking). Re-enable with
+            a real Stripe Payment Sheet (@stripe/stripe-react-native) later. */}
       </View>
     </ScreenContainer>
   );

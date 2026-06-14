@@ -13,7 +13,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ArrowLeft, Lock, Shield } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import { useAgencyStore } from "@/stores/useAgencyStore";
@@ -91,6 +90,9 @@ export default function PaymentScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
+              testID="payment-back-button"
+              accessibilityRole="button"
+              accessibilityLabel={t("common.back", { defaultValue: "Retour" })}
               onPress={() => router.back()}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -116,28 +118,15 @@ export default function PaymentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t("payment.methodTitle")}</Text>
 
-          <TouchableOpacity activeOpacity={0.9} style={styles.cardWrapper}>
-            <LinearGradient
-              colors={[colors.primary, "#8B3D7E"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.savedCard}
-            >
-              <View style={styles.savedCardLeft}>
-                <Text style={styles.cardNumber}>{t("payment.cardNumber")}</Text>
-                <Text style={styles.cardExpiry}>{t("payment.cardExpiry")}</Text>
-              </View>
-              <Text style={styles.cardBrand}>{t("payment.cardBrand")}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.addCard}
-            activeOpacity={0.7}
-            onPress={() => router.push("/payment-methods" as any)}
-          >
-            <Text style={styles.addCardText}>{t("payment.addCard")}</Text>
-          </TouchableOpacity>
+          <View style={styles.checkoutNote}>
+            <Lock size={18} color={colors.primary} strokeWidth={1.8} />
+            <Text style={styles.checkoutNoteText}>
+              {t("payment.checkoutNote", {
+                defaultValue:
+                  "Le paiement s'effectue de manière sécurisée via Stripe. Vous saisirez votre carte à l'étape suivante.",
+              })}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.securityRow}>
@@ -152,6 +141,9 @@ export default function PaymentScreen() {
         </View>
 
         <TouchableOpacity
+          testID="payment-confirm-button"
+          accessibilityRole="button"
+          accessibilityLabel={t("payment.confirmPay", { amount: amountStr })}
           onPress={handlePay}
           disabled={isProcessing}
           style={[styles.primaryCta, isProcessing && { opacity: 0.7 }]}
@@ -218,51 +210,22 @@ function makeStyles(colors: ReturnType<typeof useTheme>["colors"], isDark: boole
       marginBottom: 12,
     },
 
-    cardWrapper: {
-      marginBottom: 12,
-      borderRadius: 24,
-      overflow: "hidden",
-    },
-    savedCard: {
-      padding: 22,
+    checkoutNote: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
-    },
-    savedCardLeft: {},
-    cardNumber: {
-      fontFamily: "Poppins_600SemiBold",
-      fontSize: 16,
-      color: "#FFFFFF",
-      marginBottom: 4,
-      letterSpacing: 1,
-    },
-    cardExpiry: {
-      fontFamily: "Poppins_400Regular",
-      fontSize: 12,
-      color: "rgba(255, 255, 255, 0.8)",
-    },
-    cardBrand: {
-      fontFamily: "Poppins_700Bold",
-      fontSize: 14,
-      color: "#FFFFFF",
-      letterSpacing: 0.5,
-    },
-
-    addCard: {
+      gap: 12,
       padding: 16,
-      borderRadius: 22,
-      borderWidth: 1.5,
-      borderStyle: "dashed",
-      borderColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
+      borderRadius: 18,
       backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
-    addCardText: {
-      fontFamily: "Poppins_600SemiBold",
-      fontSize: 14,
-      color: colors.primary,
+    checkoutNoteText: {
+      flex: 1,
+      fontFamily: "Poppins_400Regular",
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSecondary,
     },
 
     securityRow: {

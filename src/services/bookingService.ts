@@ -13,8 +13,12 @@ interface ServerBooking {
   id: string;
   vehicleId: string;
   vehicleName: string;
+  agencyName?: string;
+  agencyPhone?: string | null;
   startDate: string;
   endDate: string;
+  pickupTime?: string;
+  returnTime?: string;
   status: "pending" | "confirmed" | "active" | "completed" | "cancelled";
   totalAmount: number;
   depositStatus:
@@ -150,6 +154,7 @@ export function adaptServerBooking(b: ServerBooking): {
   vehicleId: string;
   vehicleName: string;
   agencyName: string;
+  agencyPhone?: string;
   startDate: string;
   endDate: string;
   startTime: string;
@@ -176,14 +181,17 @@ export function adaptServerBooking(b: ServerBooking): {
     id: b.id,
     vehicleId: b.vehicleId,
     vehicleName: b.vehicleName,
-    agencyName: "",
+    agencyName: b.agencyName ?? "",
+    agencyPhone: b.agencyPhone ?? undefined,
     startDate: b.startDate,
     endDate: b.endDate,
-    startTime: "09:00",
-    endTime: "18:00",
+    startTime: b.pickupTime ?? "09:00",
+    endTime: b.returnTime ?? "18:00",
     status,
     total: b.totalAmount,
     reference: b.id.slice(0, 8).toUpperCase(),
+    // pickupMethod/withChauffeur have no field on the booking DTO yet; kept as
+    // defaults until the backend exposes the selected options on the booking.
     pickupMethod: "agency",
     withChauffeur: false,
     startMileage: b.startMileage ?? undefined,
