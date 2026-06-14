@@ -15,10 +15,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useSafeBack } from "@/hooks/useSafeBack";
 import {
   getProfile,
   updateProfile,
@@ -50,7 +51,7 @@ const SNAKE_TO_CAMEL: Record<string, keyof UpdateProfilePayload> = {
 };
 
 export default function ProfileCompleteScreen() {
-  const router = useRouter();
+  const goBack = useSafeBack("/home");
   const params = useLocalSearchParams<{ missing?: string }>();
   const queryClient = useQueryClient();
 
@@ -94,7 +95,7 @@ export default function ProfileCompleteScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-profile"] });
-      router.back();
+      goBack();
     },
   });
 

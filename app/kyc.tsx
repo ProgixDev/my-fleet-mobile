@@ -30,6 +30,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 import {
   uploadKycDocument,
@@ -64,6 +65,7 @@ const EMPTY: FieldState = { status: "empty" };
 
 export default function KYCScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const agencyId = useAgencyStore((s) => s.paired?.id ?? null);
@@ -79,11 +81,11 @@ export default function KYCScreen() {
 
   const handleBack = useCallback(() => {
     if (step === 1) {
-      router.back();
+      goBack();
     } else {
       setStep((s) => s - 1);
     }
-  }, [step, router]);
+  }, [step, goBack]);
 
   const handleSkip = useCallback(() => {
     router.replace("/home");

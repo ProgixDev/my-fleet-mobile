@@ -25,6 +25,7 @@ import {
   useAgency,
   useAgencyVehicles,
 } from "@/hooks/useAgencies";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import {
   useAgencyReviews,
   useAgencyRating,
@@ -40,6 +41,7 @@ type Tab = "vehicles" | "reviews";
 
 export default function AgencyDetailScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>("vehicles");
@@ -83,7 +85,7 @@ export default function AgencyDetailScreen() {
           {/* Back */}
           <SafeAreaView style={styles.heroNav} edges={["top"]}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={goBack}
               style={styles.heroButton}
               activeOpacity={0.7}
             >

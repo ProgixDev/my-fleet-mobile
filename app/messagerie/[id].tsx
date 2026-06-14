@@ -11,7 +11,7 @@ import {
   Linking,
   Alert,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useBookingDetail } from "@/hooks/useBookings";
 import { useMessages, usePostMessage } from "@/hooks/useMessages";
 import { useTheme } from "@/context/ThemeContext";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 interface Message {
   id: number;
@@ -29,7 +30,7 @@ interface Message {
 }
 
 export default function MessagerieScreen() {
-  const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -149,7 +150,7 @@ export default function MessagerieScreen() {
 
       {/* ─── Full-bleed header (extends under the notch) ─── */}
       <LinearGradient
-        colors={[colors.primary, "#8B3D7E"]}
+        colors={[colors.primary, colors.accent]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
@@ -158,7 +159,7 @@ export default function MessagerieScreen() {
         ]}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={goBack}
           style={styles.backBtn}
           hitSlop={10}
         >
@@ -280,9 +281,7 @@ function makeStyles(
   colors: ReturnType<typeof useTheme>["colors"],
   isDark: boolean,
 ) {
-  const bubbleAgencyBg = isDark
-    ? "rgba(46, 28, 43, 0.9)"
-    : "#F2F2F7";
+  const bubbleAgencyBg = isDark ? colors.surface2 : "#F2F2F7";
   const inputBg = isDark ? colors.surface : "#F2F2F7";
 
   return StyleSheet.create({

@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 // Basic E.164 sanity check: a leading "+" followed by 8-15 digits. Kept simple
 // on purpose — the field defaults to "+" and the user types the full number
@@ -25,6 +26,7 @@ const E164_REGEX = /^\+[1-9]\d{7,14}$/;
 
 export default function PhoneLoginScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/onboarding");
   const { t } = useTranslation();
   const { colors } = useTheme();
 
@@ -73,7 +75,7 @@ export default function PhoneLoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.7}

@@ -39,6 +39,7 @@ import {
 } from "@/utils/delivery";
 import { centsToUnits } from "@/utils/money";
 import { useTheme } from "@/context/ThemeContext";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const HALF_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
@@ -78,6 +79,7 @@ function isBetween(d: Date, start: Date, end: Date): boolean {
 
 export default function BookingScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
@@ -284,7 +286,7 @@ export default function BookingScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={goBack}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

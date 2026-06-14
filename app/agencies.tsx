@@ -14,6 +14,7 @@ import { ArrowLeft, Star } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "@/components/BottomNav";
 import { useAgencies } from "@/hooks/useAgencies";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { useTheme } from "@/context/ThemeContext";
 
 // Stable Unsplash fallbacks if agency.logo isn't a URL.
@@ -28,6 +29,7 @@ const cityFilters = ["Toutes", "Nice", "Cannes", "Monaco", "Antibes"];
 
 export default function AgencyListScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [selectedCity, setSelectedCity] = useState("Toutes");
@@ -53,7 +55,7 @@ export default function AgencyListScreen() {
           {/* Header */}
           <View style={styles.headerRow}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={goBack}
               activeOpacity={0.7}
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

@@ -7,14 +7,14 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react-native";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 export default function FeedbackScreen() {
-  const router = useRouter();
+  const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const [rating, setRating] = useState(0);
@@ -24,7 +24,7 @@ export default function FeedbackScreen() {
 
   const handleSubmit = () => {
     Alert.alert(t("feedback.thanks"));
-    router.back();
+    goBack();
   };
 
   return (

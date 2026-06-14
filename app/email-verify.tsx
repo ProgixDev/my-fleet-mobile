@@ -17,11 +17,13 @@ import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { classifyOtpError } from "@/lib/otpErrors";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 const RESEND_COUNTDOWN = 30;
 
 export default function EmailVerifyScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/auth");
   const { t } = useTranslation();
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ email?: string }>();
@@ -101,7 +103,7 @@ export default function EmailVerifyScreen() {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.7}
