@@ -52,15 +52,27 @@ function isBetween(d: Date, s: Date, e: Date) { return d.getTime() > s.getTime()
 // the public catalog has no availability signal yet.)
 const initialRecentSearches: string[] = [];
 
-interface PopularCategory { nameKey: string; icon: string; filter: string; }
-const popularCategories: PopularCategory[] = [
-  { nameKey: "search.popular.sportives", icon: "🏎️", filter: "Sportive" },
-  { nameKey: "search.popular.suv", icon: "🚙", filter: "SUV" },
-  { nameKey: "search.popular.berlines", icon: "🚗", filter: "Berline" },
-  { nameKey: "search.popular.cabriolets", icon: "🚗", filter: "Cabriolet" },
-  { nameKey: "search.popular.electriques", icon: "⚡", filter: "Électrique" },
-  { nameKey: "search.popular.withChauffeur", icon: "👔", filter: "chauffeur" },
-];
+// A popular-category pill. `filter` is the raw vehicle category value used to
+// drive the category filter; `label` is the display string; `icon` is an emoji
+// (a default car icon is used for any category without a specific mapping).
+interface PopularCategory { label: string; icon: string; filter: string; }
+
+const DEFAULT_CATEGORY_ICON = "🚗";
+
+// Best-effort emoji per known category. Lookup is case-insensitive; anything
+// not listed falls back to DEFAULT_CATEGORY_ICON.
+const CATEGORY_ICONS: Record<string, string> = {
+  sportive: "🏎️",
+  suv: "🚙",
+  berline: "🚗",
+  cabriolet: "🚗",
+  électrique: "⚡",
+  electrique: "⚡",
+  chauffeur: "👔",
+  luxe: "✨",
+  utilitaire: "🚐",
+  van: "🚐",
+};
 
 // Extended city list for autocomplete
 const ALL_CITIES = [
@@ -225,7 +237,7 @@ interface SearchResult {
 export default function SearchScreen() {
   const router = useRouter();
   const goBack = useSafeBack("/home");
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searches, setSearches] = useState(initialRecentSearches);
@@ -257,6 +269,30 @@ export default function SearchScreen() {
   const pairedAgencyId = useAgencyStore((s) => s.paired?.id ?? null);
   const { data: agencies = [] } = useAgencies({});
   const { data: vehicles = [] } = useAgencyVehicles(pairedAgencyId ?? undefined);
+
+  // Popular categories derived dynamically from the loaded vehicles' real
+  // `category` values (deduped, non-empty). Each is mapped to an emoji icon
+  // (default car icon when unknown) and a display label that prefers a matching
+  // i18n key (`search.popular.<lowercased>`) and falls back to the raw category
+  // string. Wired to the existing `categoryFilter`.
+  const popularCategories: PopularCategory[] = useMemo(() => {
+    const seen = new Set<string>();
+    const out: PopularCategory[] = [];
+    for (const v of vehicles) {
+      const raw = v.category?.trim();
+      if (!raw) continue;
+      const key = raw.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const i18nKey = `search.popular.${key}`;
+      out.push({
+        filter: raw,
+        label: i18n.exists(i18nKey) ? t(i18nKey) : raw,
+        icon: CATEGORY_ICONS[key] ?? DEFAULT_CATEGORY_ICON,
+      });
+    }
+    return out;
+  }, [vehicles, t, i18n]);
 
   const results = useMemo(() => {
     const out: SearchResult[] = [];
@@ -457,16 +493,18 @@ export default function SearchScreen() {
                 </View>
               </View>
             )}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t("search.popularCategoriesTitle")}</Text>
-              <View style={styles.categoriesGrid}>
-                {popularCategories.map((c) => (
-                  <TouchableOpacity key={c.nameKey} style={styles.categoryCard} activeOpacity={0.85} onPress={() => { setCategoryFilter(c.filter); setSearchQuery(""); }}>
-                    <Text style={styles.categoryIcon}>{c.icon}</Text><Text style={styles.categoryName}>{t(c.nameKey)}</Text>
-                  </TouchableOpacity>
-                ))}
+            {popularCategories.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t("search.popularCategoriesTitle")}</Text>
+                <View style={styles.categoriesGrid}>
+                  {popularCategories.map((c) => (
+                    <TouchableOpacity key={c.filter} testID={`search-category-${c.filter}`} style={styles.categoryCard} activeOpacity={0.85} onPress={() => { setCategoryFilter(c.filter); setSearchQuery(""); }}>
+                      <Text style={styles.categoryIcon}>{c.icon}</Text><Text style={styles.categoryName}>{c.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
+            )}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t("search.suggestionsTitle")}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionsScroll}>

@@ -1,6 +1,6 @@
 import { View, Text, Pressable, Linking, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
-import { MessageCircle, Mail, Phone, ChevronRight } from "lucide-react-native";
+import { Mail, Phone, ChevronRight } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
@@ -18,15 +18,9 @@ export default function ContactScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
 
+  // NOTE: a "live chat" channel was removed — there is no in-app support chat
+  // backend, so its button was a no-op. Email and phone are the real channels.
   const channels: Channel[] = [
-    {
-      icon: MessageCircle,
-      titleKey: "contact.chatTitle",
-      valueKey: "",
-      hintKey: "contact.chatHint",
-      onPress: () => {},
-      accent: colors.primary,
-    },
     {
       icon: Mail,
       titleKey: "contact.emailTitle",

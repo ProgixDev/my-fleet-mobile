@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -30,9 +31,20 @@ const topics: Topic[] = [
 ];
 
 export default function HelpScreen() {
+  const router = useRouter();
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const [query, setQuery] = useState("");
+
+  // Filter topics by the search query (case-insensitive against the translated
+  // label) so the search bar actually does something. There is no FAQ-answer
+  // content yet, so each topic row routes to the support contact screen — the
+  // honest, working behaviour until real articles exist.
+  const filteredTopics = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return topics;
+    return topics.filter((topic) => t(topic.labelKey).toLowerCase().includes(q));
+  }, [query, t]);
 
   return (
     <ScreenContainer
@@ -61,11 +73,13 @@ export default function HelpScreen() {
 
       {/* Topics grid */}
       <View style={{ gap: 8, marginTop: 14 }}>
-        {topics.map((topic) => {
+        {filteredTopics.map((topic) => {
           const Icon = topic.icon;
           return (
             <Pressable
               key={topic.labelKey}
+              testID={`help-topic-${topic.labelKey}`}
+              onPress={() => router.push("/contact" as never)}
               style={[
                 styles.row,
                 { backgroundColor: colors.surface, borderColor: colors.border },
