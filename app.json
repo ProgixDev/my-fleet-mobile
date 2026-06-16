@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.progix.myfleet-client",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "icon": "./assets/logo.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -54,7 +54,10 @@
               "scheme": "myfleet"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },

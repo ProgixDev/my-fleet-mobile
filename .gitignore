@@ -45,3 +45,6 @@ yarn-error.*
 *.mov
 .env*
 !.env.example
+
+# local agent config
+.claude/
