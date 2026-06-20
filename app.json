@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.progix.myfleet-client",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "icon": "./assets/logo.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -40,7 +40,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.progix.myfleet.client",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
