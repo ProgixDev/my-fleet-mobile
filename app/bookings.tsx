@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,7 +17,7 @@ import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import { BottomNav } from "@/components/BottomNav";
 import { useTheme } from "@/context/ThemeContext";
-import { useMyBookings } from "@/hooks/useBookings";
+import { useMyBookings, useCancelBooking } from "@/hooks/useBookings";
 import { centsToUnits } from "@/utils/money";
 
 const FALLBACK_IMAGES = [
@@ -45,6 +46,32 @@ export default function BookingsScreen() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("active");
   const { data: rawBookings = [], isLoading, isError, refetch } = useMyBookings();
+  const cancelBooking = useCancelBooking();
+
+  const handleCancel = (bookingId: string) => {
+    Alert.alert(
+      t("bookings.cancel.title", { defaultValue: "Annuler la réservation ?" }),
+      t("bookings.cancel.message", {
+        defaultValue:
+          "Cette réservation sera annulée et le véhicule libéré. Action irréversible.",
+      }),
+      [
+        { text: t("common.no", { defaultValue: "Non" }), style: "cancel" },
+        {
+          text: t("bookings.cancel.confirm", { defaultValue: "Annuler" }),
+          style: "destructive",
+          onPress: () =>
+            cancelBooking.mutate(bookingId, {
+              onError: (e) =>
+                Alert.alert(
+                  t("common.error", { defaultValue: "Erreur" }),
+                  e instanceof Error ? e.message : String(e),
+                ),
+            }),
+        },
+      ],
+    );
+  };
 
   const bookings = useMemo(() => {
     return rawBookings.filter((b) => {
@@ -277,6 +304,30 @@ export default function BookingsScreen() {
                         </Text>
                       </View>
                     </View>
+
+                    {booking.status === "confirmed" && (
+                      <TouchableOpacity
+                        testID={`bookings-cancel-${booking.id}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("bookings.cancel.button", {
+                          defaultValue: "Annuler la réservation",
+                        })}
+                        disabled={cancelBooking.isPending}
+                        onPress={() => handleCancel(booking.id)}
+                        activeOpacity={0.7}
+                        style={[styles.cancelButton, { borderColor: colors.border }]}
+                      >
+                        {cancelBooking.isPending ? (
+                          <ActivityIndicator size="small" color="#F87171" />
+                        ) : (
+                          <Text style={styles.cancelButtonText}>
+                            {t("bookings.cancel.button", {
+                              defaultValue: "Annuler la réservation",
+                            })}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </TouchableOpacity>
               );
@@ -389,6 +440,20 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
     fontSize: 12,
     color: "#FFFFFF",
+    letterSpacing: 0.2,
+  },
+  cancelButton: {
+    marginTop: 12,
+    height: 44,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButtonText: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 13,
+    color: "#F87171",
     letterSpacing: 0.2,
   },
 });

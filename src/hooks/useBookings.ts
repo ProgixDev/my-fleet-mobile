@@ -4,6 +4,7 @@ import {
   bookingDetail,
   bookingSummary,
   createBooking,
+  cancelBooking,
   adaptServerBooking,
   type CreateClientBookingPayload,
 } from "@/services/bookingService";
@@ -48,6 +49,24 @@ export function useCreateBooking() {
     mutationFn: async (payload: CreateClientBookingPayload) => {
       if (!agencyId) throw new Error("No agency paired");
       return createBooking(agencyId, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+    },
+  });
+}
+
+/**
+ * Cancels an upcoming reservation for the paired agency, then refreshes the
+ * bookings list. The backend rejects cancelling an active/finished rental.
+ */
+export function useCancelBooking() {
+  const agencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingId: string) => {
+      if (!agencyId) throw new Error("No agency paired");
+      return cancelBooking(agencyId, bookingId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
