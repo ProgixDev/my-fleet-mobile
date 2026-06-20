@@ -147,6 +147,27 @@ export async function createCheckoutSession(
   );
 }
 
+// Cancel an upcoming reservation (pending/confirmed only; the backend enforces
+// that + frees the vehicle and releases any deposit hold).
+export async function cancelBooking(
+  agencyId: string,
+  bookingId: string,
+): Promise<ServerBooking> {
+  const headers = await getAuthHeader();
+  return apiRequest<ServerBooking>(
+    `/client/bookings/${encodeURIComponent(bookingId)}/cancel`,
+    {
+      method: "POST",
+      headers: {
+        ...headers,
+        ...agencyHeaders(agencyId),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+  );
+}
+
 // Adapter — normalises the server booking to the client app's existing
 // in-app `Booking` shape so screens that read `mockData.ts` types still work.
 export function adaptServerBooking(b: ServerBooking): {
