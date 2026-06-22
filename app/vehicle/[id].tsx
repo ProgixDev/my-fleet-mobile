@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import { useSafeBack } from "@/hooks/useSafeBack";
 import { useVehicleDetail } from "@/hooks/useAgencyFleet";
+import { centsToUnits } from "@/utils/money";
 import { useAgencyStore } from "@/stores/useAgencyStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -246,7 +247,7 @@ export default function VehicleDetailScreen() {
               style={[styles.pricePill, { backgroundColor: colors.primary }]}
             >
               <Text style={styles.priceValue}>
-                {t("common.priceEuro", { price: vehicle.dailyRate })}
+                {t("common.priceEuro", { price: centsToUnits(vehicle.dailyRate) })}
               </Text>
               <Text style={styles.priceUnit}> {t("common.perDay")}</Text>
             </View>
@@ -390,7 +391,7 @@ export default function VehicleDetailScreen() {
                       {t("vehicle.extraKmRate")}
                     </Text>
                     <Text style={[styles.mileageValue, { color: colors.text }]}>
-                      {t("common.priceEuro", { price: vehicle.extraKmRate })}
+                      {t("common.priceEuro", { price: centsToUnits(vehicle.extraKmRate) })}
                       /km
                     </Text>
                   </View>
@@ -410,7 +411,7 @@ export default function VehicleDetailScreen() {
       >
         <View style={styles.bottomPriceRow}>
           <Text style={[styles.bottomPrice, { color: colors.text }]}>
-            {t("common.priceEuro", { price: vehicle.dailyRate })}
+            {t("common.priceEuro", { price: centsToUnits(vehicle.dailyRate) })}
           </Text>
           <Text style={[styles.bottomUnit, { color: colors.textSecondary }]}>
             {" "}
