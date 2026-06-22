@@ -225,7 +225,15 @@
       "Nov",
       "Dec"
     ],
-    "daysOfWeek": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+    "daysOfWeek": [
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa",
+      "Su"
+    ]
   },
   "search": {
     "inputPlaceholder": "Vehicle name...",
@@ -432,7 +440,14 @@
       "completed": "Completed"
     },
     "totalLabel": "Total",
-    "seeDetails": "See details"
+    "seeDetails": "See details",
+    "cancel": {
+      "title": "Cancel booking?",
+      "message": "This booking will be cancelled and the vehicle released. This can't be undone.",
+      "confirm": "Yes, cancel",
+      "button": "Cancel booking"
+    },
+    "empty": "No bookings in this category."
   },
   "bookingSummary": {
     "title": "Return summary",

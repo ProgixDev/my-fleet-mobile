@@ -225,7 +225,15 @@
       "Nov",
       "Déc"
     ],
-    "daysOfWeek": ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"]
+    "daysOfWeek": [
+      "Lu",
+      "Ma",
+      "Me",
+      "Je",
+      "Ve",
+      "Sa",
+      "Di"
+    ]
   },
   "search": {
     "inputPlaceholder": "Nom du véhicule...",
@@ -432,7 +440,14 @@
       "completed": "Terminée"
     },
     "totalLabel": "Total",
-    "seeDetails": "Voir détails"
+    "seeDetails": "Voir détails",
+    "cancel": {
+      "title": "Annuler la réservation ?",
+      "message": "Cette réservation sera annulée et le véhicule libéré. Action irréversible.",
+      "confirm": "Oui, annuler",
+      "button": "Annuler la réservation"
+    },
+    "empty": "Aucune réservation dans cette catégorie."
   },
   "bookingSummary": {
     "title": "Résumé de retour",
