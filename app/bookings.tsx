@@ -58,7 +58,7 @@ export default function BookingsScreen() {
       [
         { text: t("common.no", { defaultValue: "Non" }), style: "cancel" },
         {
-          text: t("bookings.cancel.confirm", { defaultValue: "Annuler" }),
+          text: t("bookings.cancel.confirm", { defaultValue: "Oui, annuler" }),
           style: "destructive",
           onPress: () =>
             cancelBooking.mutate(bookingId, {
