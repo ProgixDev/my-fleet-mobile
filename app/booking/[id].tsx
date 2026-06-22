@@ -510,7 +510,9 @@ export default function BookingScreen() {
               {t("booking.chauffeur.title")}
             </Text>
             <Text style={styles.chauffeurPrice}>
-              {t("booking.chauffeur.price", { price: chauffeurDailyPrice })}
+              {t("booking.chauffeur.price", {
+                price: centsToUnits(chauffeurDailyPrice),
+              })}
             </Text>
           </View>
           <TouchableOpacity
@@ -558,7 +560,9 @@ export default function BookingScreen() {
                 )}
               </Text>
               <Text style={styles.lineItemValue}>
-                {t("booking.summary.valueEuro", { value: vehicleTotal })}
+                {t("booking.summary.valueEuro", {
+                  value: centsToUnits(vehicleTotal),
+                })}
               </Text>
             </View>
             {deliveryFee > 0 && (
@@ -572,7 +576,7 @@ export default function BookingScreen() {
                 </Text>
                 <Text style={styles.lineItemValue}>
                   {t("booking.summary.valueEuro", {
-                    value: deliveryFee.toFixed(2).replace(".", ","),
+                    value: centsToUnits(deliveryFee),
                   })}
                 </Text>
               </View>
@@ -588,7 +592,9 @@ export default function BookingScreen() {
                   )}
                 </Text>
                 <Text style={styles.lineItemValue}>
-                  {t("booking.summary.valueEuro", { value: chauffeurFee })}
+                  {t("booking.summary.valueEuro", {
+                    value: centsToUnits(chauffeurFee),
+                  })}
                 </Text>
               </View>
             )}
@@ -597,7 +603,7 @@ export default function BookingScreen() {
             <Text style={styles.totalLabel}>{t("booking.summary.total")}</Text>
             <Text style={styles.totalValue}>
               {t("booking.summary.valueEuro", {
-                value: total.toFixed(2).replace(".", ","),
+                value: centsToUnits(total),
               })}
             </Text>
           </View>

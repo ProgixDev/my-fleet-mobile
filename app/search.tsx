@@ -519,7 +519,7 @@ export default function SearchScreen() {
                     ) : (
                       <View style={styles.suggestionImage} />
                     )}
-                    <View style={styles.suggestionInfo}><Text style={styles.suggestionName} numberOfLines={1}>{v.name}</Text><Text style={styles.suggestionPrice}>{t("common.pricePerDay", { price: v.dailyRate })}</Text></View>
+                    <View style={styles.suggestionInfo}><Text style={styles.suggestionName} numberOfLines={1}>{v.name}</Text><Text style={styles.suggestionPrice}>{t("common.pricePerDay", { price: centsToUnits(v.dailyRate) })}</Text></View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
