@@ -1,0 +1,21 @@
+# Client (renter) app — home smoke.
+# Asserts the app boots to the authenticated home and the bottom tabs navigate.
+#
+# NOTE: the renter onboards by scanning an agency QR (camera), which Maestro
+# can't drive — so this flow assumes a session already exists on the simulator
+# (launch WITHOUT clearState to preserve it). On a fresh device the app starts
+# at onboarding → /auth instead; see README for the unauthenticated smoke.
+appId: com.progix.myfleet-client
+name: Client · home smoke
+tags:
+  - smoke
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Bookings|Réservations"
+    timeout: 25000
+- assertVisible: "Profile|Profil"
+- assertVisible: "Settings|Réglages|Paramètres"
+- tapOn: "Bookings|Réservations"
+- tapOn: "Profile|Profil"
+- takeScreenshot: artifacts/client-home
