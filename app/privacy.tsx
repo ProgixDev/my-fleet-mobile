@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable, Linking } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
@@ -36,6 +36,16 @@ export default function PrivacyScreen() {
           </View>
         ))}
       </View>
+
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => Linking.openURL("https://myfleetagency.com/confidentialite")}
+        style={{ marginTop: 18 }}
+      >
+        <Text style={[styles.link, { color: colors.primary }]}>
+          {t("privacy.fullPolicy", "Consulter la politique complète en ligne")}
+        </Text>
+      </Pressable>
     </ScreenContainer>
   );
 }
@@ -61,5 +71,10 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
     fontSize: 13,
     lineHeight: 20,
+  },
+  link: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 13,
+    textDecorationLine: "underline",
   },
 });
