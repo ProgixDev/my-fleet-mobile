@@ -20,7 +20,7 @@
       "icon": "./assets/logo.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSLocationWhenInUseUsageDescription": "Allow My Fleet to use your location to show the pickup point and directions on the map.",
+        "NSLocationWhenInUseUsageDescription": "Autorisez My Fleet à utiliser votre position pour afficher le point de prise en charge et l'itinéraire sur la carte.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSAllowsLocalNetworking": true,
@@ -72,20 +72,20 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow My Fleet to access your camera to scan agency QR codes."
+          "cameraPermission": "Autorisez My Fleet à accéder à l'appareil photo pour scanner le QR code de l'agence."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow My Fleet to access your photos to upload your identity documents.",
-          "cameraPermission": "Allow My Fleet to access your camera to photograph your identity documents."
+          "photosPermission": "Autorisez My Fleet à accéder à vos photos pour envoyer vos documents d'identité.",
+          "cameraPermission": "Autorisez My Fleet à accéder à l'appareil photo pour photographier vos documents d'identité."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow My Fleet to use your location to show the pickup point and directions on the map."
+          "locationWhenInUsePermission": "Autorisez My Fleet à utiliser votre position pour afficher le point de prise en charge et l'itinéraire sur la carte."
         }
       ],
       "expo-notifications"
