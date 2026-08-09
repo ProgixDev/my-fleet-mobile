@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   View,
   Text,
   TouchableOpacity,
@@ -40,6 +41,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>("vehicles");
   const paired = useAgencyStore((s) => s.paired);
+  const agencyServerSynced = useAgencyStore((s) => s.serverSynced);
 
   const pairedId = paired?.id ?? null;
 
@@ -70,6 +72,27 @@ export default function HomeScreen() {
   }, [agencyReviews, ratingData]);
 
   if (!pairedId || !paired) {
+    // Wait for the server to say which agencies this customer belongs to
+    // before concluding they have none. `auth.tsx` replaces straight to /home
+    // after sign-in, bypassing the same guard in app/index.tsx, so without
+    // this a returning customer — or an App Review tester on a pre-paired
+    // demo account — is bounced to the camera screen while the lookup is
+    // still in flight, and pairing state only lives on the device.
+    if (!agencyServerSynced) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: colors.background,
+          }}
+          testID="home-pairing-sync"
+        >
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      );
+    }
     return <Redirect href="/scan" />;
   }
 
