@@ -626,13 +626,16 @@
     "phoneHint": "Lun–Dim, 8h–22h"
   },
   "feedback": {
-    "title": "Envoyer un commentaire",
-    "subtitle": "Aidez-nous à améliorer My Fleet",
-    "ratingLabel": "Comment évaluez-vous votre expérience ?",
+    "title": "Évaluer votre agence",
+    "subtitle": "Votre avis aide les autres locataires",
+    "ratingLabel": "Comment s'est passée votre expérience ?",
     "commentLabel": "Dites-nous plus",
     "commentPlaceholder": "Ce que vous avez aimé, ou ce qu'il faut améliorer…",
     "submit": "Envoyer",
-    "thanks": "Merci ! Votre retour a été envoyé."
+    "thanks": "Merci ! Votre avis a été publié.",
+    "noAgency": "Aucune agence associée à votre compte.",
+    "errorTitle": "Avis non envoyé",
+    "errorMessage": "Impossible d'envoyer votre avis. Réessayez."
   },
   "terms": {
     "title": "Conditions d'utilisation",

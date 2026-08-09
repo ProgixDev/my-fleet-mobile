@@ -1,3 +1,13 @@
+// Review of the paired agency.
+//
+// This screen used to be a placebo: it collected a rating and a comment, then
+// showed a "thanks" alert and navigated away without sending anything. It now
+// posts a real review through POST /reviews, which the agency sees and which
+// feeds the rating shown on the home screen.
+//
+// `bookingId` is optional. Passed from a completed booking it ties the review
+// to that rental; opened from Settings it is a general review of the agency.
+
 import { useState } from "react";
 import {
   View,
@@ -5,26 +15,54 @@ import {
   TextInput,
   Pressable,
   Alert,
+  ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react-native";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { useTheme } from "@/context/ThemeContext";
 import { useSafeBack } from "@/hooks/useSafeBack";
+import { usePostReview } from "@/hooks/useReviews";
+import { useAgencyStore } from "@/stores/useAgencyStore";
 
 export default function FeedbackScreen() {
   const goBack = useSafeBack("/home");
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
+  const { bookingId } = useLocalSearchParams<{ bookingId?: string }>();
+  const agencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const postReview = usePostReview();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
-  const canSubmit = rating > 0;
+  const canSubmit = rating > 0 && !!agencyId && !postReview.isPending;
 
   const handleSubmit = () => {
-    Alert.alert(t("feedback.thanks"));
-    goBack();
+    if (!agencyId) {
+      // Nothing to review against. Reachable only if the store is empty, which
+      // the pairing guards already prevent, so this is a safety net.
+      Alert.alert(t("feedback.noAgency"));
+      return;
+    }
+    postReview.mutate(
+      { agencyId, rating, comment: comment.trim(), bookingId },
+      {
+        onSuccess: () => {
+          Alert.alert(t("feedback.thanks"));
+          goBack();
+        },
+        onError: (err) => {
+          Alert.alert(
+            t("feedback.errorTitle"),
+            err instanceof Error && err.message
+              ? err.message
+              : t("feedback.errorMessage"),
+          );
+        },
+      },
+    );
   };
 
   return (
@@ -110,16 +148,20 @@ export default function FeedbackScreen() {
             elevation: 6,
           })}
         >
-          <Text
-            style={{
-              fontFamily: "Poppins_600SemiBold",
-              fontSize: 15,
-              color: "#FFFFFF",
-              letterSpacing: 0.2,
-            }}
-          >
-            {t("feedback.submit")}
-          </Text>
+          {postReview.isPending ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text
+              style={{
+                fontFamily: "Poppins_600SemiBold",
+                fontSize: 15,
+                color: "#FFFFFF",
+                letterSpacing: 0.2,
+              }}
+            >
+              {t("feedback.submit")}
+            </Text>
+          )}
         </Pressable>
       </View>
     </ScreenContainer>

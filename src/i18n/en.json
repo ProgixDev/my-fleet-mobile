@@ -626,13 +626,16 @@
     "phoneHint": "Mon–Sun, 8am–10pm"
   },
   "feedback": {
-    "title": "Send feedback",
-    "subtitle": "Help us make My Fleet better",
+    "title": "Rate your agency",
+    "subtitle": "Your review helps other renters",
     "ratingLabel": "How was your experience?",
     "commentLabel": "Tell us more",
     "commentPlaceholder": "What did you love, or what should we fix?",
     "submit": "Send feedback",
-    "thanks": "Thanks! Your feedback was sent."
+    "thanks": "Thanks! Your review has been published.",
+    "noAgency": "No agency is linked to your account.",
+    "errorTitle": "Review not sent",
+    "errorMessage": "Could not send your review. Please try again."
   },
   "terms": {
     "title": "Terms of service",
