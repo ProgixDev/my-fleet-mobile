@@ -42,8 +42,7 @@
       "package": "com.progix.myfleet.client",
       "versionCode": 5,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ],
       "intentFilters": [
         {
@@ -59,6 +58,9 @@
             "DEFAULT"
           ]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -72,7 +74,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Autorisez My Fleet à accéder à l'appareil photo pour scanner le QR code de l'agence."
+          "cameraPermission": "Autorisez My Fleet à accéder à l'appareil photo pour scanner le QR code de l'agence.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       [
