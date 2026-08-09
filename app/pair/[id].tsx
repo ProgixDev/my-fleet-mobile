@@ -38,6 +38,13 @@ export default function PairDeepLinkScreen() {
     // point of view, and a retry loop on a bad id would hammer the API.
     if (attempted.current) return;
     if (!isHydrated || !isAuthenticated || !id) return;
+    // Already paired with this agency: nothing to do. The render-time redirect
+    // below is not enough on its own — the effect fires first, so without this
+    // the mutation runs anyway. Seen on device: a paired customer following
+    // their own agency's link was sent to /profile-complete, because the pair
+    // endpoint validates the profile before it checks for an existing
+    // relation.
+    if (alreadyPaired === id) return;
     attempted.current = true;
 
     void (async () => {
@@ -61,7 +68,7 @@ export default function PairDeepLinkScreen() {
         );
       }
     })();
-  }, [id, isAuthenticated, isHydrated, pair, router, t]);
+  }, [alreadyPaired, id, isAuthenticated, isHydrated, pair, router, t]);
 
   // Nothing to pair with — treat as a stray link rather than an error screen.
   if (isHydrated && !id) return <Redirect href="/home" />;
