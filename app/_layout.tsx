@@ -19,11 +19,16 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { queryClient } from "@/lib/queryClient";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { usePushRegistration } from "@/hooks/usePushRegistration";
+import { useAgencyPairingSync } from "@/hooks/useAgencyPairingSync";
 
 function RootContent() {
   const { colors } = useTheme();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   // Register for push once the user is authenticated (no-op on simulators).
-  usePushRegistration(useAuthStore((s) => s.isAuthenticated));
+  usePushRegistration(isAuthenticated);
+  // Recover the agency pairing from the server, so a reinstall or a reviewer's
+  // fresh install is not stranded on the scan screen.
+  useAgencyPairingSync(isAuthenticated);
 
   return (
     <>

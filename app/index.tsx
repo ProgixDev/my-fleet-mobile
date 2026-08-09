@@ -19,6 +19,7 @@ export default function SplashScreen() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const pairedAgencyId = useAgencyStore((s) => s.paired?.id ?? null);
+  const agencyServerSynced = useAgencyStore((s) => s.serverSynced);
 
   const opacity = useSharedValue(0);
 
@@ -36,17 +37,7 @@ export default function SplashScreen() {
     opacity: opacity.value,
   }));
 
-  if (splashDone && isHydrated) {
-    if (isAuthenticated) {
-      if (pairedAgencyId) {
-        return <Redirect href="/home" />;
-      }
-      return <Redirect href="/scan" />;
-    }
-    return <Redirect href="/onboarding" />;
-  }
-
-  return (
+  const splash = (
     <View className="flex-1 items-center justify-center bg-white">
       <Animated.View style={logoStyle}>
         <Image
@@ -57,4 +48,24 @@ export default function SplashScreen() {
       </Animated.View>
     </View>
   );
+
+  if (splashDone && isHydrated) {
+    if (isAuthenticated) {
+      if (pairedAgencyId) {
+        return <Redirect href="/home" />;
+      }
+      // Stay on the splash until the server has answered which agencies this
+      // customer belongs to (useAgencyPairingSync, mounted in _layout).
+      // Deciding before the answer arrives would send anyone holding a valid
+      // server-side pairing — a reinstall, a new phone, an App Review tester
+      // on a pre-paired demo account — to the scan screen with no way back.
+      if (!agencyServerSynced) {
+        return splash;
+      }
+      return <Redirect href="/scan" />;
+    }
+    return <Redirect href="/onboarding" />;
+  }
+
+  return splash;
 }
