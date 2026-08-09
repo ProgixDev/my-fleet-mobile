@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { apiRequest } from "./api";
 import { getAuthHeader } from "./authHeader";
 
@@ -36,6 +38,42 @@ export async function listPublicAgencies(
     `/agency/public${query ? `?${query}` : ""}`,
     { headers },
   );
+}
+
+/**
+ * Shape of an agency as this app stores it. Parsed rather than trusted: the
+ * result is written straight into persisted state, so a malformed response
+ * would be cached to disk and survive restarts.
+ */
+const pairedAgencySchema = z.object({
+  id: z.string().min(1),
+  slug: z.string(),
+  name: z.string(),
+  logo: z.string(),
+  country: z.string(),
+  currency: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  city: z.string().optional(),
+  vehicleCount: z.number().optional(),
+  rating: z.number().nullable().optional(),
+  reviewCount: z.number().optional(),
+});
+
+/**
+ * The agencies this customer is already paired with, most recently paired
+ * first.
+ *
+ * Pairing is created by scanning an agency QR, but the resulting relation
+ * lives on the server while the app keeps it only in AsyncStorage — so a
+ * reinstall or a new device silently loses it. This is the source of truth
+ * used to rehydrate `useAgencyStore` on sign-in.
+ */
+export async function listMyAgencies(): Promise<PublicAgency[]> {
+  const headers = await getAuthHeader();
+  const data = await apiRequest<unknown>("/agency/public/mine", { headers });
+  return z.array(pairedAgencySchema).parse(data);
 }
 
 export interface PublicVehicle {
