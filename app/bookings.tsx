@@ -305,6 +305,26 @@ export default function BookingsScreen() {
                       </View>
                     </View>
 
+                    {booking.status === "completed" && (
+                      <TouchableOpacity
+                        testID={`bookings-review-${booking.id}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("feedback.title")}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/feedback",
+                            params: { bookingId: booking.id },
+                          })
+                        }
+                        activeOpacity={0.7}
+                        style={[styles.cancelButton, { borderColor: colors.border }]}
+                      >
+                        <Text style={[styles.cancelButtonText, { color: colors.primary }]}>
+                          {t("feedback.title")}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
                     {booking.status === "confirmed" && (
                       <TouchableOpacity
                         testID={`bookings-cancel-${booking.id}`}
