@@ -12,7 +12,6 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react-native";
-import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
@@ -38,37 +37,6 @@ interface FormData {
   email: string;
   phone: string;
   password: string;
-}
-
-function GoogleIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 20 20">
-      <Path
-        fill="#4285F4"
-        d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"
-      />
-      <Path
-        fill="#34A853"
-        d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"
-      />
-      <Path
-        fill="#FBBC05"
-        d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"
-      />
-      <Path
-        fill="#EA4335"
-        d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"
-      />
-    </Svg>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="#EAEAEA">
-      <Path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.14 4.56-3.74 4.25z" />
-    </Svg>
-  );
 }
 
 export default function AuthScreen() {
@@ -465,30 +433,12 @@ export default function AuthScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Social Buttons — not yet wired to a real provider */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity
-                style={[styles.socialButton, styles.socialButtonDisabled]}
-                activeOpacity={1}
-                disabled
-                testID="auth-social-google-button"
-                accessibilityRole="button"
-              >
-                <GoogleIcon />
-                <Text style={styles.socialText}>{t("auth.socialGoogle")}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.socialButton, styles.socialButtonDisabled]}
-                activeOpacity={1}
-                disabled
-                testID="auth-social-apple-button"
-                accessibilityRole="button"
-              >
-                <AppleIcon />
-                <Text style={styles.socialText}>{t("auth.socialApple")}</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Google and Apple sign-in used to sit here, permanently
+                disabled because neither was ever wired to a provider. A
+                greyed-out button that never becomes usable is a promise the
+                app cannot keep, and App Store review reads it as an
+                incomplete app (guideline 2.1). Email, phone OTP and the
+                agency QR pairing are the real ways in. */}
 
             {/* Phone login entry point — Supabase native phone OTP */}
             <TouchableOpacity
@@ -666,29 +616,8 @@ const styles = StyleSheet.create({
     color: "rgba(234, 234, 234, 0.5)",
   },
 
-  // Social buttons
-  socialRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 14,
-  },
-  socialButton: {
-    flex: 1,
-    height: 46,
-    borderRadius: 999,
-    backgroundColor: "#2E1C2B",
-    borderWidth: 1,
-    borderColor: "rgba(234, 234, 234, 0.08)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  socialButtonDisabled: {
-    opacity: 0.5,
-  },
   phoneButton: {
-    marginTop: 10,
+    marginTop: 14,
     height: 46,
     borderRadius: 999,
     backgroundColor: "#2E1C2B",
