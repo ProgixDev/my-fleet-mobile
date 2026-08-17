@@ -48,3 +48,6 @@ yarn-error.*
 
 # local agent config
 .claude/
+
+# Local screenshots/recordings from agent runs — never part of a build.
+artifacts/
