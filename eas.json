@@ -25,8 +25,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://myfleet-backend-production.up.railway.app",
         "EXPO_PUBLIC_AUTH_BASE_URL": "https://myfleet-backend-production.up.railway.app/auth",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://euwxqkzoormnbfrjjbqe.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1d3hxa3pvb3JtbmJmcmpqYnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NTUxOTgsImV4cCI6MjA5NjQzMTE5OH0.B7ysq7TNIu-MyO8I9xutgRBzvDnxOZ9WRLwgW2TAhrk"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://lmuczxqkikdckcdwniju.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdWN6eHFraWtkY2tjZHduaWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTMxODMsImV4cCI6MjEwMjAyOTE4M30.UX3Xj3Nc8L5c2HbDKs1CaTf39geH4DKU8OI7SQM6U_w"
       }
     }
   },
